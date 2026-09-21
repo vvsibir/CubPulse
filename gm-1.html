@@ -237,6 +237,335 @@ class Camera {
 }
 
 /* =========================================================
+   ЗВУК И МУЗЫКА (Web Audio API — всё процедурное, без файлов)
+   ========================================================= */
+const BPM = 138;
+const STEP_DUR = 60 / BPM / 4;  // длительность 16-й ноты (сек)
+const TOTAL_STEPS = 64;          // 4 такта по 16 шагов
+const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+// Прогрессия A-минор: Am – F – C – G (один такт на аккорд)
+const CHORDS = [
+  { // Am
+    bass: midi(45),                              // A2
+    arp:  [midi(57), midi(60), midi(64), midi(69)], // A3 C4 E4 A4
+    pad:  [midi(57), midi(64), midi(69)],
+    mel:  [[0, midi(69)], [4, midi(72)], [8, midi(76)], [12, midi(69)]],
+  },
+  { // F
+    bass: midi(41),                              // F2
+    arp:  [midi(57), midi(60), midi(65), midi(69)], // A3 C4 F4 A4
+    pad:  [midi(57), midi(65), midi(69)],
+    mel:  [[0, midi(69)], [4, midi(72)], [8, midi(77)], [12, midi(72)]],
+  },
+  { // C
+    bass: midi(48),                              // C3
+    arp:  [midi(60), midi(64), midi(67), midi(72)], // C4 E4 G4 C5
+    pad:  [midi(60), midi(64), midi(67)],
+    mel:  [[0, midi(67)], [4, midi(72)], [8, midi(76)], [12, midi(79)]],
+  },
+  { // G
+    bass: midi(43),                              // G2
+    arp:  [midi(59), midi(62), midi(67), midi(71)], // B3 D4 G4 B4
+    pad:  [midi(59), midi(62), midi(67)],
+    mel:  [[0, midi(67)], [4, midi(71)], [8, midi(74)], [12, midi(71)]],
+  },
+];
+
+class Sound {
+  constructor() {
+    this.ctx = null;
+    this.musicGain = null;
+    this.sfxGain = null;
+    this.muted = false;
+    this.musicOn = false;
+    this._timer = null;
+    this._step = 0;
+    this._nextTime = 0;
+    this._noiseBuf = null;
+    try { this.muted = localStorage.getItem('gm_muted') === '1'; } catch (e) {}
+  }
+
+  // Создать контекст при первом взаимодействии (autoplay policy)
+  unlock() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.musicGain = this.ctx.createGain();
+      this.musicGain.connect(this.ctx.destination);
+      this.sfxGain = this.ctx.createGain();
+      this.sfxGain.connect(this.ctx.destination);
+      this._noiseBuf = this._makeNoise();
+      this._applyMute();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    this.startMusic();
+  }
+
+  _applyMute() {
+    if (!this.ctx) return;
+    this.musicGain.gain.value = this.muted ? 0 : 0.45;
+    this.sfxGain.gain.value = this.muted ? 0 : 0.9;
+  }
+
+  toggleMute() {
+    this.muted = !this.muted;
+    this._applyMute();
+    try { localStorage.setItem('gm_muted', this.muted ? '1' : '0'); } catch (e) {}
+    return this.muted;
+  }
+
+  _makeNoise() {
+    const len = Math.floor(this.ctx.sampleRate * 1);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return buf;
+  }
+
+  /* ---------- SFX ---------- */
+
+  // Простой тон с огибающей
+  _tone({ type = 'square', f0, f1, dur, vol = 0.3, delay = 0 }) {
+    const t = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f0, t);
+    if (f1 !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g);
+    g.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  // Шумовой импульс через фильтр
+  _noise({ dur, vol, delay = 0, fStart, fEnd, type = 'lowpass', q = 1 }) {
+    const t = this.ctx.currentTime + delay;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this._noiseBuf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.setValueAtTime(fStart, t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(20, fEnd), t + dur);
+    f.Q.value = q;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f);
+    f.connect(g);
+    g.connect(this.sfxGain);
+    src.start(t);
+    src.stop(t + dur + 0.02);
+  }
+
+  jump() {
+    if (!this.ctx) return;
+    this._tone({ type: 'triangle', f0: 520, f1: 950, dur: 0.09, vol: 0.22 });
+    this._noise({ dur: 0.05, vol: 0.07, fStart: 3000, fEnd: 1500, type: 'highpass' });
+  }
+
+  land() {
+    if (!this.ctx) return;
+    this._noise({ dur: 0.08, vol: 0.1, fStart: 500, fEnd: 150, type: 'lowpass' });
+    this._tone({ type: 'sine', f0: 160, f1: 70, dur: 0.09, vol: 0.12 });
+  }
+
+  death() {
+    if (!this.ctx) return;
+    this._noise({ dur: 0.45, vol: 0.5, fStart: 3500, fEnd: 120, type: 'lowpass', q: 0.7 });
+    this._tone({ type: 'sawtooth', f0: 220, f1: 38, dur: 0.4, vol: 0.32 });
+    this._tone({ type: 'square', f0: 110, f1: 30, dur: 0.4, vol: 0.18, delay: 0.02 });
+  }
+
+  win() {
+    if (!this.ctx) return;
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((f, i) => {
+      this._tone({ type: 'square', f0: f, f1: f, dur: 0.32, vol: 0.18, delay: i * 0.09 });
+    });
+    this._noise({ dur: 0.6, vol: 0.1, fStart: 8000, fEnd: 4000, type: 'highpass', delay: 0.12 });
+  }
+
+  /* ---------- МУЗЫКА ---------- */
+
+  _musicNote({ type, f, dur, vol, t, filter }) {
+    const osc = this.ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = f;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g);
+    if (filter) {
+      const flt = this.ctx.createBiquadFilter();
+      flt.type = filter.type;
+      flt.frequency.value = filter.freq;
+      g.connect(flt);
+      flt.connect(this.musicGain);
+    } else {
+      g.connect(this.musicGain);
+    }
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  _kick(t) {
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(42, t + 0.11);
+    g.gain.setValueAtTime(0.55, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+    osc.connect(g);
+    g.connect(this.musicGain);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  }
+
+  _snare(t) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this._noiseBuf;
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 2000;
+    bp.Q.value = 0.8;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.26, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(this.musicGain);
+    src.start(t);
+    src.stop(t + 0.16);
+    this._musicNote({ type: 'triangle', f: 200, dur: 0.08, vol: 0.18, t });
+  }
+
+  _hat(t, vol, open) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this._noiseBuf;
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 7500;
+    const g = this.ctx.createGain();
+    const dur = open ? 0.18 : 0.05;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(hp);
+    hp.connect(g);
+    g.connect(this.musicGain);
+    src.start(t);
+    src.stop(t + dur + 0.02);
+  }
+
+  _bass(t, f) {
+    this._musicNote({ type: 'square', f, dur: 0.22, vol: 0.28, t, filter: { type: 'lowpass', freq: 600 } });
+  }
+
+  _arp(t, f) {
+    this._musicNote({ type: 'triangle', f, dur: STEP_DUR * 0.9, vol: 0.085, t });
+  }
+
+  _mel(t, f) {
+    const dur = STEP_DUR * 3;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.value = f;
+    const flt = this.ctx.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.frequency.value = 2500;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.13, t + 0.006);
+    g.gain.setValueAtTime(0.13, t + dur - 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(flt);
+    flt.connect(g);
+    g.connect(this.musicGain);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  _pad(t, freqs, dur) {
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.06, t + 0.4);
+    g.gain.setValueAtTime(0.06, t + dur - 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const flt = this.ctx.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.frequency.value = 1400;
+    g.connect(flt);
+    flt.connect(this.musicGain);
+    for (const f of freqs) {
+      for (const det of [-6, 6]) {
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.value = f;
+        osc.detune.value = det;
+        osc.connect(g);
+        osc.start(t);
+        osc.stop(t + dur + 0.1);
+      }
+    }
+  }
+
+  _playStep(step, t) {
+    const bar = (step / 16) | 0;
+    const s = step % 16;
+    const chord = CHORDS[bar];
+
+    // Бочка — каждый quarter
+    if (s % 4 === 0) this._kick(t);
+    // Снейр — на 2-й и 4-й доле
+    if (s === 4 || s === 12) this._snare(t);
+    // Хэты — каждую 16-ю (акцент на offbeat), открытый на 14-й
+    if (s % 2 === 1) this._hat(t, 0.13, false);
+    else this._hat(t, 0.08, false);
+    if (s === 14) this._hat(t, 0.16, true);
+    // Бас — по quarter
+    if (s % 4 === 0) this._bass(t, chord.bass);
+    // Арпеджио — каждая 16-я
+    this._arp(t, chord.arp[s % 4]);
+    // Мелодия — по долям
+    for (const [ms, mf] of chord.mel) if (s === ms) this._mel(t, mf);
+    // Пэд — в начале такта
+    if (s === 0) this._pad(t + 0.01, chord.pad, STEP_DUR * 16);
+  }
+
+  startMusic() {
+    if (!this.ctx || this.musicOn) return;
+    this.musicOn = true;
+    this._step = 0;
+    this._nextTime = this.ctx.currentTime + 0.1;
+    if (!this._timer) {
+      this._timer = setInterval(() => this._tick(), 25);
+    }
+  }
+
+  stopMusic() {
+    this.musicOn = false;
+    if (this._timer) { clearInterval(this._timer); this._timer = null; }
+  }
+
+  _tick() {
+    if (!this.ctx) return;
+    let guard = 0;
+    while (this._nextTime < this.ctx.currentTime + 0.12 && guard++ < 32) {
+      this._playStep(this._step, this._nextTime);
+      this._step = (this._step + 1) % TOTAL_STEPS;
+      this._nextTime += STEP_DUR;
+    }
+  }
+}
+
+/* =========================================================
    КОЛЛИЗИИ
    ========================================================= */
 function aabb(a, b) {
@@ -328,15 +657,18 @@ class Game {
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
+    this.sound = new Sound();
 
     // Управление клавиатурой
     window.addEventListener('keydown', (e) => {
+      this.sound.unlock();
       if (e.code === 'Space') {
         e.preventDefault();
         if (!this.jumpHeld) this.onPressStart();
         this.jumpHeld = true;
       }
       if (e.code === 'KeyR') this.restart();
+      if (e.code === 'KeyM') this.sound.toggleMute();
     });
     window.addEventListener('keyup', (e) => {
       if (e.code === 'Space') this.jumpHeld = false;
@@ -345,6 +677,8 @@ class Game {
     // Управление мышью/тапом
     canvas.addEventListener('mousedown', (e) => {
       e.preventDefault();
+      this.sound.unlock();
+      if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
       this.onPressStart();
       this.jumpHeld = true;
     });
@@ -352,6 +686,8 @@ class Game {
     canvas.addEventListener('mouseleave', () => { this.jumpHeld = false; });
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      this.sound.unlock();
+      if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
       this.onPressStart();
       this.jumpHeld = true;
     }, { passive: false });
@@ -366,13 +702,22 @@ class Game {
 
   // Обработка начала нажатия
   onPressStart() {
+    this.sound.unlock();
     if (this.state === 'playing') {
-      this.player.jump();
+      if (this.player.jump()) this.sound.jump();
     } else if (this.state === 'dead' && this.deathTimer > 0.4) {
       this.restart();
     } else if (this.state === 'won') {
       this.restart();
     }
+  }
+
+  // Попадание в иконку динамика (в координатах канваса 1280x720)
+  _hitVolume(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * (CONFIG.W / rect.width);
+    const py = (e.clientY - rect.top) * (CONFIG.H / rect.height);
+    return px > CONFIG.W - 70 && px < CONFIG.W - 8 && py > 56 && py < 110;
   }
 
   restart() {
@@ -444,6 +789,7 @@ class Game {
             this.state = 'won';
             this.player.won = true;
             this.totalTime = this.time - this.startTime;
+            this.sound.win();
             this.spawnParticles(
               this.player.x + this.player.w / 2,
               this.player.y + this.player.h / 2,
@@ -456,9 +802,9 @@ class Game {
         // 5. Автопрыжок при удержании
         if (this.state === 'playing') {
           if (this.jumpHeld && this.player.onGround) {
-            this.player.jump();
+            if (this.player.jump()) this.sound.jump();
           } else if (this.player.jumpBuffer > 0 && this.player.onGround) {
-            this.player.jump();
+            if (this.player.jump()) this.sound.jump();
           }
         }
 
@@ -469,6 +815,7 @@ class Game {
             this.player.y + this.player.h,
             6, '#66e0ff', 120
           );
+          this.sound.land();
         }
 
         // 7. Падение за карту
@@ -491,6 +838,7 @@ class Game {
     this.state = 'dead';
     this.player.alive = false;
     this.deathTimer = 0;
+    this.sound.death();
     this.spawnParticles(
       this.player.x + this.player.w / 2,
       this.player.y + this.player.h / 2,
@@ -733,6 +1081,50 @@ class Game {
     ctx.shadowBlur = 10;
     ctx.fillRect(barX, barY, barW * (progress / 100), 10);
 
+    this.drawVolumeIcon();
+
+    ctx.restore();
+  }
+
+  // Иконка звука (клик/тап — вкл/выкл)
+  drawVolumeIcon() {
+    const ctx = this.ctx;
+    const x = CONFIG.W - 40, y = 84;
+    ctx.save();
+    ctx.fillStyle = this.sound.muted ? 'rgba(255,255,255,0.35)' : '#fff';
+    ctx.shadowBlur = 0;
+
+    // Корпус динамика
+    ctx.beginPath();
+    ctx.moveTo(x - 16, y - 6);
+    ctx.lineTo(x - 8, y - 6);
+    ctx.lineTo(x - 2, y - 12);
+    ctx.lineTo(x - 2, y + 12);
+    ctx.lineTo(x - 8, y + 6);
+    ctx.lineTo(x - 16, y + 6);
+    ctx.closePath();
+    ctx.fill();
+
+    if (this.sound.muted) {
+      // Крест — звук выключен
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + 5, y - 10);
+      ctx.lineTo(x + 15, y + 10);
+      ctx.moveTo(x + 15, y - 10);
+      ctx.lineTo(x + 5, y + 10);
+      ctx.stroke();
+    } else {
+      // Волны звука
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      for (let i = 1; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.arc(x - 2, y, 10 + i * 6, -Math.PI / 3.2, Math.PI / 3.2);
+        ctx.stroke();
+      }
+    }
     ctx.restore();
   }
 
