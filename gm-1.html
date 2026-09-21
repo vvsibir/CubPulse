@@ -13,6 +13,10 @@
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #fff;
     user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none; /* iOS: без лупы/выделения при длинном таче */
     -webkit-tap-highlight-color: transparent;
   }
   #wrap {
@@ -25,6 +29,9 @@
     box-shadow: 0 0 60px rgba(0, 200, 255, 0.25);
     cursor: pointer;
     touch-action: none; /* убираем жесты браузера на таче — управляем сами */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none; /* без контекстного меню/выделения при длинном таче */
   }
 </style>
 </head>
@@ -707,6 +714,10 @@ class Game {
     });
     canvas.addEventListener('pointercancel', () => { this.jumpHeld = false; });
     canvas.addEventListener('pointerleave', () => { this.jumpHeld = false; });
+
+    // Защита от выделения текста/меню при длинном таче
+    document.addEventListener('selectstart', (e) => e.preventDefault());
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this.loop(t));
