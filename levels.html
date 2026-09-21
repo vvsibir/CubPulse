@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Geometry Dash — выбор уровня</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; min-height: 100%;
+    background: #0b0b1a;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(0, 200, 255, 0.14), transparent 60%),
+      radial-gradient(1000px 500px at 90% 110%, rgba(255, 224, 102, 0.10), transparent 60%),
+      #0b0b1a;
+    padding: 40px 16px 60px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  h1 {
+    font-size: 42px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 24px rgba(0, 200, 255, 0.45);
+  }
+  header p {
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+  }
+  #levels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .card {
+    width: 260px;
+    padding: 22px 22px 18px;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 200, 255, 0.7);
+    box-shadow: 0 12px 34px rgba(0, 200, 255, 0.3);
+  }
+  .card .num {
+    font-size: 46px;
+    font-weight: bold;
+    line-height: 1;
+    opacity: 0.92;
+  }
+  .card .name {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 6px;
+  }
+  .card .meta {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 6px;
+  }
+  .card .play {
+    margin-top: 16px;
+    padding: 8px 0;
+    text-align: center;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    font-weight: bold;
+    font-size: 15px;
+  }
+  #status {
+    text-align: center;
+    margin-top: 30px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 16px;
+  }
+  footer {
+    margin-top: 40px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Geometry Dash</h1>
+  <p>Выбери уровень — загрузка карточек определяется наличием скриптов level-N.js рядом</p>
+</header>
+
+<div id="levels"></div>
+<div id="status"></div>
+
+<footer>Новый уровень: положи рядом файл level-N.js (N — следующий номер), карточка появится сама</footer>
+
+<script>
+/* =========================================================
+   Экран выбора уровней.
+   Уровни НЕ захардкожены: по очереди пытаемся подключить
+   level-1.js, level-2.js, ... пока файл не «не найдётся».
+   Каждый загруженный скрипт регистрирует себя в
+   window.GM_LEVELS — из реестра и строятся карточки.
+   ========================================================= */
+(function () {
+  'use strict';
+
+  const root = window;
+  root.GM_LEVELS = root.GM_LEVELS || {};
+
+  // Скорость игрока (CONFIG.SPEED) — только для показа «секунд прохождения»
+  const SPEED = 480;
+
+  function buildCard(id, L) {
+    const hue1 = (L.bg && L.bg.start !== undefined) ? L.bg.start : 220;
+    const hue2 = (L.bg && L.bg.end !== undefined) ? L.bg.end : 280;
+    const secs = (L.length / SPEED).toFixed(1);
+
+    const a = document.createElement('a');
+    a.className = 'card';
+    a.href = 'gm-1.html?level=' + id;
+    a.style.background =
+      'linear-gradient(135deg, hsl(' + hue1 + ', 60%, 16%), hsl(' + hue2 + ', 70%, 26%))';
+    a.innerHTML =
+      '<div class="num">' + id + '</div>' +
+      '<div class="name">' + (L.name || ('Level ' + id)) + '</div>' +
+      '<div class="meta">длина ' + L.length + ' px · ~' + secs + ' сек</div>' +
+      '<div class="meta">объектов: ' + (L.objects ? L.objects.length : '?') + '</div>' +
+      '<div class="play">Играть →</div>';
+    return a;
+  }
+
+  function render() {
+    const wrap = document.getElementById('levels');
+    const status = document.getElementById('status');
+    const ids = Object.keys(root.GM_LEVELS)
+      .map(Number)
+      .filter(function (n) { return !isNaN(n); })
+      .sort(function (a, b) { return a - b; });
+
+    if (ids.length === 0) {
+      status.textContent = 'Не найдено ни одного уровня — проверь, что рядом лежат файлы level-N.js';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    ids.forEach(function (id) {
+      frag.appendChild(buildCard(id, root.GM_LEVELS[id]));
+    });
+    wrap.appendChild(frag);
+  }
+
+  // Проба скриптов по порядку; останавливаемся на первом отсутствующем
+  (function probe(id) {
+    const s = document.createElement('script');
+    s.src = 'level-' + id + '.js';
+    s.onload = function () { probe(id + 1); };      // найдено — пробуем следующий
+    s.onerror = function () { render(); };          // конец списка — строим карточки
+    document.head.appendChild(s);
+  })(1);
+})();
+</script>
+</body>
+</html>
