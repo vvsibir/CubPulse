@@ -89,18 +89,38 @@
 
 <!--
   Архитектура (мульти-уровневая):
-    level-1.js, level-2.js, level-3.js ...  — данные уровней, регистрируются в window.GM_LEVELS
-    game.js                                  — общий движок (выбирает уровень по ?level=N)
+    level-1.js ... level-20.js — данные уровней, регистрируются в window.GM_LEVELS
+    game.js                    — общий движок (выбирает уровень по ?level=N)
 
   Запуск:
     gm-1.html            — уровень 1
     gm-1.html?level=1    — уровень 1
-    gm-1.html?level=2    — уровень 2
-    gm-1.html?level=3    — уровень 3 (самый длинный)
+    gm-1.html?level=4    — уровень 4 («Аврора»)
+    gm-1.html?level=20   — уровень 20 («Радуга», самый длинный)
+
+  Новый уровень: добавь <script src="level-N.js"> перед game.js —
+  движок сам выберет его по ?level=N.
 -->
 <script src="level-1.js"></script>
 <script src="level-2.js"></script>
 <script src="level-3.js"></script>
+<script src="level-4.js"></script>
+<script src="level-5.js"></script>
+<script src="level-6.js"></script>
+<script src="level-7.js"></script>
+<script src="level-8.js"></script>
+<script src="level-9.js"></script>
+<script src="level-10.js"></script>
+<script src="level-11.js"></script>
+<script src="level-12.js"></script>
+<script src="level-13.js"></script>
+<script src="level-14.js"></script>
+<script src="level-15.js"></script>
+<script src="level-16.js"></script>
+<script src="level-17.js"></script>
+<script src="level-18.js"></script>
+<script src="level-19.js"></script>
+<script src="level-20.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
