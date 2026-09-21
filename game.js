@@ -624,6 +624,18 @@ class Game {
     // Запрет контекстного меню (правая кнопка мыши / длинный тач) по всей странице
     document.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    // Меню победы/поражения (HTML-кнопки поверх канваса)
+    this.menu = document.getElementById('menu') || null;
+    if (this.menu) {
+      const bind = (sel, fn) => {
+        const el = this.menu.querySelector(sel);
+        if (el) el.addEventListener('click', fn);
+      };
+      bind('#btn-restart', () => this.restart());
+      bind('#btn-next', () => this.nextLevel());
+      bind('#btn-select', () => { window.location.href = 'levels.html'; });
+    }
+
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this.loop(t));
   }
@@ -649,6 +661,20 @@ class Game {
     return px > CONFIG.W - 70 && px < CONFIG.W - 8 && py > 56 && py < 110;
   }
 
+  // Показать/скрыть HTML-меню (появляется при победе и с задержкой после смерти)
+  updateMenu() {
+    if (!this.menu) return;
+    const show = this.state === 'won' || (this.state === 'dead' && this.deathTimer > 0.3);
+    this.menu.classList.toggle('show', show);
+  }
+
+  // Переход на следующий уровень; если его нет — на экран выбора уровней
+  nextLevel() {
+    const next = this.level.id + 1;
+    const hasNext = window.GM_LEVELS && window.GM_LEVELS[String(next)];
+    window.location.href = hasNext ? 'gm-1.html?level=' + next : 'levels.html';
+  }
+
   restart() {
     this.player.reset();
     this.camera.x = -CONFIG.W * CONFIG.CAMERA_X_RATIO;
@@ -660,6 +686,7 @@ class Game {
     this.startTime = this.time;
     this.jumpHeld = false;
     this.sound.startMusic();
+    this.updateMenu(); // скрыть меню победы/поражения
   }
 
   resize() {
@@ -755,6 +782,9 @@ class Game {
       } else if (this.state === 'dead') {
       this.deathTimer += dt;
     }
+
+    // Меню победы/поражения (обновляем видимость по состоянию)
+    this.updateMenu();
 
     // Частицы
     for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -1088,10 +1118,6 @@ class Game {
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 28px Arial';
       ctx.fillText(`Попыток: ${this.attempts}`, CONFIG.W / 2, CONFIG.H / 2 + 30);
-
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = '22px Arial';
-      ctx.fillText('Нажми ПРОБЕЛ / клик — попробовать снова', CONFIG.W / 2, CONFIG.H / 2 + 90);
       ctx.restore();
     }
 
@@ -1112,10 +1138,6 @@ class Game {
       ctx.font = 'bold 32px Arial';
       ctx.fillText(`Время: ${this.totalTime.toFixed(2)} сек`, CONFIG.W / 2, CONFIG.H / 2 + 20);
       ctx.fillText(`Попыток: ${this.attempts}`, CONFIG.W / 2, CONFIG.H / 2 + 65);
-
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = '22px Arial';
-      ctx.fillText('Нажми ПРОБЕЛ / клик — играть заново', CONFIG.W / 2, CONFIG.H / 2 + 130);
       ctx.restore();
     }
   }
