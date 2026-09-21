@@ -377,9 +377,11 @@ class Sound {
 
   death() {
     if (!this.ctx) return;
-    this._noise({ dur: 0.45, vol: 0.5, fStart: 3500, fEnd: 120, type: 'lowpass', q: 0.7 });
-    this._tone({ type: 'sawtooth', f0: 220, f1: 38, dur: 0.4, vol: 0.32 });
-    this._tone({ type: 'square', f0: 110, f1: 30, dur: 0.4, vol: 0.18, delay: 0.02 });
+    this._noise({ dur: 0.5, vol: 0.8, fStart: 3000, fEnd: 100, type: 'lowpass', q: 0.6 });
+    this._tone({ type: 'sawtooth', f0: 200, f1: 35, dur: 0.45, vol: 0.5 });
+    this._tone({ type: 'square', f0: 100, f1: 28, dur: 0.45, vol: 0.28, delay: 0.02 });
+    // Суб-бамп для тяжелого удара
+    this._tone({ type: 'sine', f0: 90, f1: 30, dur: 0.35, vol: 0.6, delay: 0.01 });
   }
 
   win() {
@@ -540,7 +542,12 @@ class Sound {
   }
 
   startMusic() {
-    if (!this.ctx || this.musicOn) return;
+    if (!this.ctx) return;
+    // Восстанавливаем громкость (после обрыва при смерти)
+    const t = this.ctx.currentTime;
+    this.musicGain.gain.cancelScheduledValues(t);
+    this.musicGain.gain.setValueAtTime(this.muted ? 0 : 0.45, t);
+    if (this.musicOn) return;
     this.musicOn = true;
     this._step = 0;
     this._nextTime = this.ctx.currentTime + 0.1;
@@ -552,6 +559,16 @@ class Sound {
   stopMusic() {
     this.musicOn = false;
     if (this._timer) { clearInterval(this._timer); this._timer = null; }
+  }
+
+  // Резкий обрыв музыки (смерть): глушим мастер-гейн и останавливаем планировщик
+  musicCut() {
+    this.stopMusic();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.musicGain.gain.cancelScheduledValues(t);
+    this.musicGain.gain.setValueAtTime(0, t);
+    this._step = 0;
   }
 
   _tick() {
@@ -730,6 +747,7 @@ class Game {
     this.attempts++;
     this.startTime = this.time;
     this.jumpHeld = false;
+    this.sound.startMusic();
   }
 
   resize() {
@@ -839,6 +857,7 @@ class Game {
     this.player.alive = false;
     this.deathTimer = 0;
     this.sound.death();
+    this.sound.musicCut();
     this.spawnParticles(
       this.player.x + this.player.w / 2,
       this.player.y + this.player.h / 2,
