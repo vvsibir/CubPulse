@@ -715,9 +715,10 @@ class Game {
     canvas.addEventListener('pointercancel', () => { this.jumpHeld = false; });
     canvas.addEventListener('pointerleave', () => { this.jumpHeld = false; });
 
-    // Защита от выделения текста/меню при длинном таче
+    // Защита от выделения текста при длинном таче
     document.addEventListener('selectstart', (e) => e.preventDefault());
-    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Запрет контекстного меню (правая кнопка мыши / длинный тач) по всей странице
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
 
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this.loop(t));
