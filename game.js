@@ -1003,7 +1003,11 @@ class Game {
     ctx.fillText(`Попытка: ${this.attempts}`, 24, 40);
     ctx.fillText(this.level.name || '', 24, 68);
 
-    const progress = Math.min(100, Math.floor((this.player.x / this.level.length) * 100));
+    // Прогресс: при победе показываем жёстко 100%, иначе реальный % по позиции
+    // (финиш стоит на length - 400, поэтому до победы он не успевает дойти до 100)
+    const progress = this.state === 'won'
+      ? 100
+      : Math.min(100, Math.floor((this.player.x / this.level.length) * 100));
     ctx.textAlign = 'right';
     ctx.fillText(`${progress}%`, CONFIG.W - 24, 40);
 
