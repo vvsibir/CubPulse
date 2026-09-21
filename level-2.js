@@ -15,6 +15,9 @@
     name: 'Level 2',
     length: 9800,
     groundY: 640,
+    // Тема по умолчанию — «Классика»: текущий вид и мелодия Am–F–C–G (138 BPM).
+    // Своего level.theme здесь нет — движок берёт DEFAULT_THEME.
+    music: 'classic',
     objects: [
       // --- Разминка ---
       { type: 'spike',    x: 700,  y: 600, w: 40, h: 40 },

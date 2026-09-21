@@ -144,6 +144,7 @@
       '<div class="name">' + (L.name || ('Level ' + id)) + '</div>' +
       '<div class="meta">длина ' + L.length + ' px · ~' + secs + ' сек</div>' +
       '<div class="meta">объектов: ' + (L.objects ? L.objects.length : '?') + '</div>' +
+      (L.theme && L.theme.name ? '<div class="meta">тема: ' + L.theme.name + '</div>' : '') +
       '<div class="play">Играть →</div>';
     return a;
   }

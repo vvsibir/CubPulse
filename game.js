@@ -155,33 +155,104 @@ const STEP_DUR = 60 / BPM / 4;  // длительность 16-й ноты (се
 const TOTAL_STEPS = 64;          // 4 такта по 16 шагов
 const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
-// Прогрессия A-минор: Am – F – C – G (один такт на аккорд)
-const CHORDS = [
-  { // Am
-    bass: midi(45),                              // A2
-    arp:  [midi(57), midi(60), midi(64), midi(69)], // A3 C4 E4 A4
-    pad:  [midi(57), midi(64), midi(69)],
-    mel:  [[0, midi(69)], [4, midi(72)], [8, midi(76)], [12, midi(69)]],
+// Музыкальные темы уровней: прогрессия A-минор (classic — как было),
+// Em–C–G–D (level1), Am–Em–F–G (marathon). Темп свой у каждой.
+const MUSIC = {
+  classic: {
+    bpm: 138,
+    chords: [
+      { // Am
+        bass: midi(45),                              // A2
+        arp:  [midi(57), midi(60), midi(64), midi(69)], // A3 C4 E4 A4
+        pad:  [midi(57), midi(64), midi(69)],
+        mel:  [[0, midi(69)], [4, midi(72)], [8, midi(76)], [12, midi(69)]],
+      },
+      { // F
+        bass: midi(41),                              // F2
+        arp:  [midi(57), midi(60), midi(65), midi(69)], // A3 C4 F4 A4
+        pad:  [midi(57), midi(65), midi(69)],
+        mel:  [[0, midi(69)], [4, midi(72)], [8, midi(77)], [12, midi(72)]],
+      },
+      { // C
+        bass: midi(48),                              // C3
+        arp:  [midi(60), midi(64), midi(67), midi(72)], // C4 E4 G4 C5
+        pad:  [midi(60), midi(64), midi(67)],
+        mel:  [[0, midi(67)], [4, midi(72)], [8, midi(76)], [12, midi(79)]],
+      },
+      { // G
+        bass: midi(43),                              // G2
+        arp:  [midi(59), midi(62), midi(67), midi(71)], // B3 D4 G4 B4
+        pad:  [midi(59), midi(62), midi(67)],
+        mel:  [[0, midi(67)], [4, midi(71)], [8, midi(74)], [12, midi(71)]],
+      },
+    ],
   },
-  { // F
-    bass: midi(41),                              // F2
-    arp:  [midi(57), midi(60), midi(65), midi(69)], // A3 C4 F4 A4
-    pad:  [midi(57), midi(65), midi(69)],
-    mel:  [[0, midi(69)], [4, midi(72)], [8, midi(77)], [12, midi(72)]],
+
+  // «Неон-аква» — уровень 1: Em–C–G–D, быстрее (140 BPM)
+  level1: {
+    bpm: 140,
+    chords: [
+      { // Em
+        bass: midi(40),                              // E2
+        arp:  [midi(59), midi(64), midi(67), midi(64)], // B3 E4 G4 E4
+        pad:  [midi(64), midi(67), midi(71)],
+        mel:  [[0, midi(71)], [3, midi(67)], [8, midi(71)], [12, midi(76)]],
+      },
+      { // C
+        bass: midi(48),                              // C3
+        arp:  [midi(60), midi(64), midi(67), midi(64)], // C4 E4 G4 E4
+        pad:  [midi(60), midi(64), midi(67)],
+        mel:  [[0, midi(67)], [3, midi(72)], [8, midi(76)], [12, midi(79)]],
+      },
+      { // G
+        bass: midi(43),                              // G2
+        arp:  [midi(62), midi(67), midi(71), midi(67)], // D4 G4 B4 G4
+        pad:  [midi(62), midi(67), midi(71)],
+        mel:  [[0, midi(71)], [3, midi(67)], [8, midi(74)], [12, midi(71)]],
+      },
+      { // D
+        bass: midi(50),                              // D2
+        arp:  [midi(57), midi(62), midi(66), midi(69)], // A3 D4 F#4 A4
+        pad:  [midi(62), midi(66), midi(69)],
+        mel:  [[0, midi(69)], [3, midi(74)], [8, midi(78)], [12, midi(74)]],
+      },
+    ],
   },
-  { // C
-    bass: midi(48),                              // C3
-    arp:  [midi(60), midi(64), midi(67), midi(72)], // C4 E4 G4 C5
-    pad:  [midi(60), midi(64), midi(67)],
-    mel:  [[0, midi(67)], [4, midi(72)], [8, midi(76)], [12, midi(79)]],
+
+  // «Закат» — уровень 3: Am–Em–F–G, медленнее и «эпичнее» (132 BPM)
+  marathon: {
+    bpm: 132,
+    chords: [
+      { // Am
+        bass: midi(45),                              // A2
+        arp:  [midi(57), midi(64), midi(69), midi(72)], // A3 E4 A4 C5
+        pad:  [midi(57), midi(64), midi(69)],
+        mel:  [[0, midi(72)], [4, midi(76)], [8, midi(81)], [12, midi(76)]],
+      },
+      { // Em
+        bass: midi(40),                              // E2
+        arp:  [midi(59), midi(64), midi(67), midi(71)], // B3 E4 G4 B4
+        pad:  [midi(59), midi(67), midi(71)],
+        mel:  [[0, midi(71)], [4, midi(76)], [8, midi(79)], [12, midi(76)]],
+      },
+      { // F
+        bass: midi(41),                              // F2
+        arp:  [midi(57), midi(65), midi(69), midi(72)], // A3 F4 A4 C5
+        pad:  [midi(57), midi(65), midi(69)],
+        mel:  [[0, midi(72)], [4, midi(77)], [8, midi(81)], [12, midi(77)]],
+      },
+      { // G
+        bass: midi(43),                              // G2
+        arp:  [midi(59), midi(62), midi(67), midi(74)], // B3 D4 G4 D5
+        pad:  [midi(59), midi(67), midi(74)],
+        mel:  [[0, midi(74)], [4, midi(79)], [8, midi(83)], [12, midi(79)]],
+      },
+    ],
   },
-  { // G
-    bass: midi(43),                              // G2
-    arp:  [midi(59), midi(62), midi(67), midi(71)], // B3 D4 G4 B4
-    pad:  [midi(59), midi(62), midi(67)],
-    mel:  [[0, midi(67)], [4, midi(71)], [8, midi(74)], [12, midi(71)]],
-  },
-];
+};
+
+// Псевдоним для обратной совместимости: классическая тема по умолчанию
+const CHORDS = MUSIC.classic.chords;
 
 class Sound {
   constructor() {
@@ -194,7 +265,18 @@ class Sound {
     this._step = 0;
     this._nextTime = 0;
     this._noiseBuf = null;
+    // Музыкальная тема по умолчанию — классическая (как было)
+    this._chords = MUSIC.classic.chords;
+    this._stepDur = STEP_DUR;
     try { this.muted = localStorage.getItem('gm_muted') === '1'; } catch (e) {}
+  }
+
+  // Переключить музыкальную тему уровня (неизвестный id -> классика)
+  setMusic(id) {
+    const m = MUSIC[id] || MUSIC.classic;
+    this._chords = m.chords;
+    this._stepDur = 60 / m.bpm / 4;
+    return (id in MUSIC) ? id : 'classic';
   }
 
   // Создать контекст при первом взаимодействии (autoplay policy)
@@ -381,11 +463,11 @@ class Sound {
   }
 
   _arp(t, f) {
-    this._musicNote({ type: 'triangle', f, dur: STEP_DUR * 0.9, vol: 0.085, t });
+    this._musicNote({ type: 'triangle', f, dur: this._stepDur * 0.9, vol: 0.085, t });
   }
 
   _mel(t, f) {
-    const dur = STEP_DUR * 3;
+    const dur = this._stepDur * 3;
     const osc = this.ctx.createOscillator();
     osc.type = 'square';
     osc.frequency.value = f;
@@ -431,7 +513,7 @@ class Sound {
   _playStep(step, t) {
     const bar = (step / 16) | 0;
     const s = step % 16;
-    const chord = CHORDS[bar];
+    const chord = this._chords[bar];
 
     // Бочка — каждый quarter
     if (s % 4 === 0) this._kick(t);
@@ -448,7 +530,7 @@ class Sound {
     // Мелодия — по долям
     for (const [ms, mf] of chord.mel) if (s === ms) this._mel(t, mf);
     // Пэд — в начале такта
-    if (s === 0) this._pad(t + 0.01, chord.pad, STEP_DUR * 16);
+    if (s === 0) this._pad(t + 0.01, chord.pad, this._stepDur * 16);
   }
 
   startMusic() {
@@ -487,7 +569,7 @@ class Sound {
     while (this._nextTime < this.ctx.currentTime + 0.12 && guard++ < 32) {
       this._playStep(this._step, this._nextTime);
       this._step = (this._step + 1) % TOTAL_STEPS;
-      this._nextTime += STEP_DUR;
+      this._nextTime += this._stepDur;
     }
   }
 }
@@ -564,6 +646,31 @@ function checkCollision(player, obj) {
 }
 
 /* =========================================================
+   ТЕМЫ ОФОРМЛЕНИЯ УРОВНЕЙ
+   ========================================================= */
+// Тема по умолчанию — «Классика» (как было изначально; уровень 2)
+const DEFAULT_THEME = {
+  bg: { start: 220, end: 280 },
+  colors: {
+    playerA: '#ffe066',
+    playerB: '#ff9066',
+    spike: '#ff4d6d',
+    block: '#00e0ff',
+    blockFill: 'rgba(0, 200, 255, 0.15)',
+    platform: '#a060ff',
+    finishA: '#ffe066',
+    finishB: '#ff64c8',
+    ground: '#00e0ff',
+  },
+};
+
+// HEX -> rgba() с прозрачностью (для пульсирующего финиша)
+function hexToRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+/* =========================================================
    ИГРА
    ========================================================= */
 class Game {
@@ -586,6 +693,8 @@ class Game {
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.sound = new Sound();
+    // Музыкальная тема уровня (classic/level1/marathon; без ключа — классика)
+    this.sound.setMusic(this.level.music);
 
     // Управление клавиатурой
     window.addEventListener('keydown', (e) => {
@@ -750,7 +859,7 @@ class Game {
             this.spawnParticles(
               this.player.x + this.player.w / 2,
               this.player.y + this.player.h / 2,
-              60, '#ffe066', 400
+              60, this._theme().c.finishA, 400
             );
             break;
           }
@@ -770,7 +879,7 @@ class Game {
           this.spawnParticles(
             this.player.x + this.player.w / 2,
             this.player.y + this.player.h,
-            6, '#66e0ff', 120
+            6, this._theme().c.block, 120
           );
           this.sound.land();
         }
@@ -795,6 +904,7 @@ class Game {
 
   kill() {
     if (this.state !== 'playing') return;
+    const c = this._theme().c;
     this.state = 'dead';
     this.player.alive = false;
     this.deathTimer = 0;
@@ -803,16 +913,25 @@ class Game {
     this.spawnParticles(
       this.player.x + this.player.w / 2,
       this.player.y + this.player.h / 2,
-      45, '#ff4d6d', 500
+      45, c.spike, 500
     );
     this.spawnParticles(
       this.player.x + this.player.w / 2,
       this.player.y + this.player.h / 2,
-      20, '#ffe066', 300
+      20, c.finishA, 300
     );
   }
 
   /* ---------- ОТРИСОВКА ---------- */
+
+  // Тема оформления: свои цвета уровня (level.theme.colors) или по умолчанию
+  _theme() {
+    const t = this.level.theme;
+    return {
+      bg: this.level.bg || DEFAULT_THEME.bg,
+      c: (t && t.colors) || DEFAULT_THEME.colors,
+    };
+  }
 
   drawBackground() {
     const ctx = this.ctx;
@@ -871,14 +990,15 @@ class Game {
 
   drawGround() {
     const ctx = this.ctx;
+    const c = this._theme().c;
     ctx.save();
 
     ctx.fillStyle = '#0a0a18';
     ctx.fillRect(this.camera.x - 100, CONFIG.GROUND_Y, CONFIG.W + 200, CONFIG.H);
 
-    ctx.shadowColor = '#00e0ff';
+    ctx.shadowColor = c.ground;
     ctx.shadowBlur = 25;
-    ctx.strokeStyle = '#00e0ff';
+    ctx.strokeStyle = c.ground;
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(this.camera.x - 100, CONFIG.GROUND_Y);
@@ -887,7 +1007,7 @@ class Game {
     ctx.shadowBlur = 0;
 
     ctx.globalAlpha = 0.3;
-    ctx.strokeStyle = '#00e0ff';
+    ctx.strokeStyle = c.ground;
     ctx.lineWidth = 2;
     const start = Math.floor(this.camera.x / 80) * 80;
     for (let x = start; x < this.camera.x + CONFIG.W + 80; x += 80) {
@@ -913,10 +1033,11 @@ class Game {
 
   drawSpike(obj) {
     const ctx = this.ctx;
+    const c = this._theme().c;
     ctx.save();
-    ctx.shadowColor = '#ff4d6d';
+    ctx.shadowColor = c.spike;
     ctx.shadowBlur = 18;
-    ctx.fillStyle = '#ff4d6d';
+    ctx.fillStyle = c.spike;
     ctx.beginPath();
     if (obj.flip) {
       ctx.moveTo(obj.x, obj.y);
@@ -939,13 +1060,14 @@ class Game {
 
   drawBlock(obj) {
     const ctx = this.ctx;
+    const c = this._theme().c;
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 200, 255, 0.15)';
+    ctx.fillStyle = c.blockFill;
     ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
 
-    ctx.shadowColor = '#00e0ff';
+    ctx.shadowColor = c.block;
     ctx.shadowBlur = 15;
-    ctx.strokeStyle = '#00e0ff';
+    ctx.strokeStyle = c.block;
     ctx.lineWidth = 3;
     ctx.strokeRect(obj.x + 1.5, obj.y + 1.5, obj.w - 3, obj.h - 3);
     ctx.restore();
@@ -953,10 +1075,11 @@ class Game {
 
   drawPlatform(obj) {
     const ctx = this.ctx;
+    const c = this._theme().c;
     ctx.save();
-    ctx.shadowColor = '#a060ff';
+    ctx.shadowColor = c.platform;
     ctx.shadowBlur = 15;
-    ctx.fillStyle = '#a060ff';
+    ctx.fillStyle = c.platform;
     ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
 
     ctx.shadowBlur = 0;
@@ -968,14 +1091,15 @@ class Game {
 
   drawFinish(obj) {
     const ctx = this.ctx;
+    const c = this._theme().c;
     ctx.save();
     const t = this.time * 3;
     const pulse = 0.7 + Math.sin(t) * 0.3;
 
     const grad = ctx.createLinearGradient(obj.x, obj.y, obj.x, obj.y + obj.h);
-    grad.addColorStop(0, `rgba(255, 224, 102, ${0.9 * pulse})`);
-    grad.addColorStop(1, `rgba(255, 100, 200, ${0.9 * pulse})`);
-    ctx.shadowColor = '#ffe066';
+    grad.addColorStop(0, hexToRgba(c.finishA, 0.9 * pulse));
+    grad.addColorStop(1, hexToRgba(c.finishB, 0.9 * pulse));
+    ctx.shadowColor = c.finishA;
     ctx.shadowBlur = 30;
     ctx.fillStyle = grad;
     ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
@@ -996,17 +1120,18 @@ class Game {
     if (this.state === 'dead') return;
     const ctx = this.ctx;
     const p = this.player;
+    const c = this._theme().c;
 
     ctx.save();
     ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
     ctx.rotate(p.rotation);
 
-    ctx.shadowColor = '#ffe066';
+    ctx.shadowColor = c.playerA;
     ctx.shadowBlur = 25;
 
     const grad = ctx.createLinearGradient(-p.w/2, -p.h/2, p.w/2, p.h/2);
-    grad.addColorStop(0, '#ffe066');
-    grad.addColorStop(1, '#ff9066');
+    grad.addColorStop(0, c.playerA);
+    grad.addColorStop(1, c.playerB);
     ctx.fillStyle = grad;
     ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
 
@@ -1024,6 +1149,7 @@ class Game {
 
   drawHUD() {
     const ctx = this.ctx;
+    const c = this._theme().c;
     ctx.save();
     ctx.font = 'bold 22px Arial';
     ctx.fillStyle = '#fff';
@@ -1047,8 +1173,8 @@ class Game {
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
     ctx.fillRect(barX, barY, barW, 10);
-    ctx.fillStyle = '#00e0ff';
-    ctx.shadowColor = '#00e0ff';
+    ctx.fillStyle = c.block;
+    ctx.shadowColor = c.block;
     ctx.shadowBlur = 10;
     ctx.fillRect(barX, barY, barW * (progress / 100), 10);
 
@@ -1101,6 +1227,7 @@ class Game {
 
   drawOverlay() {
     const ctx = this.ctx;
+    const c = this._theme().c;
 
     if (this.state === 'dead' && this.deathTimer > 0.3) {
       ctx.save();
@@ -1108,8 +1235,8 @@ class Game {
       ctx.fillRect(0, 0, CONFIG.W, CONFIG.H);
       ctx.textAlign = 'center';
 
-      ctx.fillStyle = '#ff4d6d';
-      ctx.shadowColor = '#ff4d6d';
+      ctx.fillStyle = c.spike;
+      ctx.shadowColor = c.spike;
       ctx.shadowBlur = 30;
       ctx.font = 'bold 80px Arial';
       ctx.fillText('GAME OVER', CONFIG.W / 2, CONFIG.H / 2 - 40);
@@ -1127,8 +1254,8 @@ class Game {
       ctx.fillRect(0, 0, CONFIG.W, CONFIG.H);
       ctx.textAlign = 'center';
 
-      ctx.fillStyle = '#ffe066';
-      ctx.shadowColor = '#ffe066';
+      ctx.fillStyle = c.finishA;
+      ctx.shadowColor = c.finishA;
       ctx.shadowBlur = 40;
       ctx.font = 'bold 90px Arial';
       ctx.fillText('LEVEL COMPLETE!', CONFIG.W / 2, CONFIG.H / 2 - 60);

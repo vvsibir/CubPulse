@@ -17,6 +17,22 @@
     groundY: 640,
     // Своя палитра фона: бирюза -> синий (по умолчанию сине-фиолетовый)
     bg: { start: 170, end: 230 },
+    // Тема «Неон-аква»: мелодия Em–C–G–D (140 BPM), мятно-лазурные элементы
+    music: 'level1',
+    theme: {
+      name: 'Неон-аква',
+      colors: {
+        playerA: '#66ffcc',
+        playerB: '#66ccff',
+        spike: '#ff8c42',
+        block: '#66ffcc',
+        blockFill: 'rgba(102, 255, 204, 0.15)',
+        platform: '#ffd166',
+        finishA: '#ffe066',
+        finishB: '#66ffcc',
+        ground: '#66ffcc',
+      },
+    },
     objects: [
       // --- Разминка (одиночные шипы) ---
       { type: 'spike',    x: 600,  y: 600, w: 40, h: 40 },

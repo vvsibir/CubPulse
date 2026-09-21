@@ -18,6 +18,22 @@
     groundY: 640,
     // Палитра «закат»: фиолетовый -> розовый
     bg: { start: 260, end: 330 },
+    // Тема «Закат»: мелодия Am–Em–F–G (132 BPM), пурпурно-золотые элементы
+    music: 'marathon',
+    theme: {
+      name: 'Закат',
+      colors: {
+        playerA: '#ff7ec8',
+        playerB: '#ff4d6d',
+        spike: '#ffd166',
+        block: '#c86bff',
+        blockFill: 'rgba(200, 107, 255, 0.15)',
+        platform: '#ff9d5c',
+        finishA: '#ffd166',
+        finishB: '#ff4d6d',
+        ground: '#c86bff',
+      },
+    },
     objects: [
       // --- Разминка ---
       { type: 'spike',    x: 600,  y: 600, w: 40, h: 40 },
