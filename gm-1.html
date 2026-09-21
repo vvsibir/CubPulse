@@ -300,7 +300,6 @@ class Sound {
       this._applyMute();
     }
     if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-    this.startMusic();
   }
 
   _applyMute() {
@@ -721,6 +720,7 @@ class Game {
   onPressStart() {
     this.sound.unlock();
     if (this.state === 'playing') {
+      this.sound.startMusic(); // старт/продолжение музыки с первого нажатия (no-op, если играет)
       if (this.player.jump()) this.sound.jump();
     } else if (this.state === 'dead' && this.deathTimer > 0.4) {
       this.restart();
