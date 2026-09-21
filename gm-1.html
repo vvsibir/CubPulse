@@ -24,6 +24,7 @@
     background: #111;
     box-shadow: 0 0 60px rgba(0, 200, 255, 0.25);
     cursor: pointer;
+    touch-action: none; /* убираем жесты браузера на таче — управляем сами */
   }
 </style>
 </head>
@@ -690,27 +691,22 @@ class Game {
       if (e.code === 'Space') this.jumpHeld = false;
     });
 
-    // Управление мышью/тапом
-    canvas.addEventListener('mousedown', (e) => {
+    // Управление указателем (Pointer Events — мышь и тач без двойного срабатывания:
+    // в отличие от touchstart+mousedown, pointerdown при таче не дублируется)
+    canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.sound.unlock();
+      if (!e.isPrimary) return; // игнорируем второй палец
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
       if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
       this.onPressStart();
       this.jumpHeld = true;
     });
-    canvas.addEventListener('mouseup', () => { this.jumpHeld = false; });
-    canvas.addEventListener('mouseleave', () => { this.jumpHeld = false; });
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      this.sound.unlock();
-      if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
-      this.onPressStart();
-      this.jumpHeld = true;
-    }, { passive: false });
-    canvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      this.jumpHeld = false;
+    canvas.addEventListener('pointerup', (e) => {
+      if (e.isPrimary) this.jumpHeld = false;
     });
+    canvas.addEventListener('pointercancel', () => { this.jumpHeld = false; });
+    canvas.addEventListener('pointerleave', () => { this.jumpHeld = false; });
 
     this.lastTime = performance.now();
     requestAnimationFrame((t) => this.loop(t));
