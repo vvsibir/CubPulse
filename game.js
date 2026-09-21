@@ -254,6 +254,67 @@ const MUSIC = {
 // Псевдоним для обратной совместимости: классическая тема по умолчанию
 const CHORDS = MUSIC.classic.chords;
 
+// ---------------------------------------------------------
+// Процедурные музыкальные темы для уровней 4-20.
+// makeMusic строит 4-аккордный луп из параметров: темп, тоника (миди),
+// лад, последовательность ступеней, вариант арпеджио и мелодии.
+// ---------------------------------------------------------
+const SCALE = {
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+};
+
+function makeMusic(bpm, root, mode, degrees, arpPat, melPat) {
+  const at = (p) => SCALE[mode][p % 7] + Math.floor(p / 7) * 12; // абсолютный оффсет ступени
+  const chords = degrees.map((deg) => {
+    const r  = root + at(deg);        // корень аккорда (3-я октава)
+    const t3 = root + at(deg + 2);    // терция
+    const t5 = root + at(deg + 4);    // квинта
+    const bass = midi(r - 12 >= 33 ? r - 12 : r);
+    const arps = [
+      [r, t3, t5, t3],   // восходящая фигура
+      [r, t5, t3, t5],   // через квинту
+      [t3, r, t5, t3],   // старт с терции
+      [t5, t3, r, t3],   // старт с квинты
+    ];
+    const arp = arps[arpPat % 4].map(midi);
+    const pad = [r, t3, t5].map(midi);
+    const mels = [
+      [[0, r + 12], [4, t3 + 12], [8, t5 + 12], [12, r + 12]],
+      [[0, t5 + 12], [3, r + 12], [8, t3 + 12], [11, t5 + 12]],
+      [[0, t3 + 12], [4, t5 + 12], [8, t3 + 12], [12, t5 + 12]],
+      [[0, r + 12], [6, t3 + 12], [10, t5 + 12], [12, t3 + 12]],
+    ];
+    const mel = mels[melPat % 4].map(([s, n]) => [s, midi(n)]);
+    return { bass, arp, pad, mel };
+  });
+  return { bpm, chords };
+}
+
+// Рецепты тем уровней 4-20 (тоника в диапазоне A2..F3, все лады и темпы разные)
+const MUSIC_RECIPES = [
+  { key: 'aurora',   bpm: 142, root: 45, mode: 'minor', deg: [0,3,5,4], arp: 0, mel: 0 },
+  { key: 'lava',     bpm: 150, root: 48, mode: 'major', deg: [0,4,5,3], arp: 1, mel: 2 },
+  { key: 'ice',      bpm: 134, root: 48, mode: 'minor', deg: [0,5,3,6], arp: 2, mel: 1 },
+  { key: 'desert',   bpm: 138, root: 50, mode: 'major', deg: [0,3,4,3], arp: 3, mel: 0 },
+  { key: 'cosmos',   bpm: 146, root: 45, mode: 'minor', deg: [0,6,3,5], arp: 0, mel: 2 },
+  { key: 'forest',   bpm: 132, root: 47, mode: 'minor', deg: [0,3,4,5], arp: 2, mel: 2 },
+  { key: 'ocean',    bpm: 128, root: 50, mode: 'minor', deg: [0,5,4,6], arp: 3, mel: 1 },
+  { key: 'cherry',   bpm: 148, root: 48, mode: 'major', deg: [0,4,5,0], arp: 0, mel: 3 },
+  { key: 'gold',     bpm: 141, root: 50, mode: 'major', deg: [0,5,6,3], arp: 2, mel: 3 },
+  { key: 'emerald',  bpm: 133, root: 45, mode: 'minor', deg: [0,5,3,5], arp: 1, mel: 0 },
+  { key: 'volt',     bpm: 149, root: 48, mode: 'major', deg: [0,3,0,5], arp: 0, mel: 1 },
+  { key: 'storm',    bpm: 126, root: 45, mode: 'minor', deg: [0,5,6,3], arp: 3, mel: 2 },
+  { key: 'obsidian', bpm: 136, root: 45, mode: 'minor', deg: [0,3,6,3], arp: 2, mel: 1 },
+  { key: 'neon',     bpm: 152, root: 48, mode: 'major', deg: [0,5,4,5], arp: 1, mel: 0 },
+  { key: 'mint',     bpm: 131, root: 52, mode: 'minor', deg: [0,5,4,6], arp: 0, mel: 3 },
+  { key: 'slate',    bpm: 127, root: 50, mode: 'minor', deg: [0,3,5,4], arp: 2, mel: 0 },
+  { key: 'rainbow',  bpm: 145, root: 53, mode: 'minor', deg: [0,4,5,3], arp: 0, mel: 2 },
+];
+for (const r of MUSIC_RECIPES) {
+  MUSIC[r.key] = makeMusic(r.bpm, r.root, r.mode, r.deg, r.arp, r.mel);
+}
+
 class Sound {
   constructor() {
     this.ctx = null;
