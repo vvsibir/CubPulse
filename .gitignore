@@ -1,0 +1,8 @@
+# Windows/msys артефакты (случайно создаются при 2>nul и т.п.)
+nul
+
+# Редакторы и ОС
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
