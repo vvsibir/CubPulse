@@ -42,16 +42,18 @@
 
 <!--
   Архитектура (мульти-уровневая):
-    level-1.js, level-2.js ...  — данные уровней, регистрируются в window.GM_LEVELS
-    game.js                     — общий движок (выбирает уровень по ?level=N)
+    level-1.js, level-2.js, level-3.js ...  — данные уровней, регистрируются в window.GM_LEVELS
+    game.js                                  — общий движок (выбирает уровень по ?level=N)
 
   Запуск:
     gm-1.html            — уровень 1
     gm-1.html?level=1    — уровень 1
     gm-1.html?level=2    — уровень 2
+    gm-1.html?level=3    — уровень 3 (самый длинный)
 -->
 <script src="level-1.js"></script>
 <script src="level-2.js"></script>
+<script src="level-3.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
