@@ -332,11 +332,12 @@ class Sound {
     try { this.muted = localStorage.getItem('gm_muted') === '1'; } catch (e) {}
   }
 
-  // Переключить музыкальную тему уровня (неизвестный id -> классика)
-  setMusic(id) {
+  // Переключить музыкальную тему уровня (неизвестный id -> классика).
+  // speed — множитель темпа уровня: чем больше, тем быстрее играет мелодия.
+  setMusic(id, speed = 1) {
     const m = MUSIC[id] || MUSIC.classic;
     this._chords = m.chords;
-    this._stepDur = 60 / m.bpm / 4;
+    this._stepDur = 60 / m.bpm / 4 / Math.max(0.05, speed);
     return (id in MUSIC) ? id : 'classic';
   }
 
@@ -763,8 +764,9 @@ class Game {
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.sound = new Sound();
-    // Музыкальная тема уровня: своя (level.music) или из полной темы level.theme
-    this.sound.setMusic(this.level.music || this._levelTheme().music);
+    // Музыкальная тема уровня: своя (level.music) или из полной темы level.theme;
+    // level.musicSpeed — ускорение мелодии (1 = как в рецепте)
+    this.sound.setMusic(this.level.music || this._levelTheme().music, this.level.musicSpeed || 1);
 
     // Управление клавиатурой
     window.addEventListener('keydown', (e) => {

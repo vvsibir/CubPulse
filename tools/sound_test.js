@@ -146,6 +146,17 @@ check('setMusic("marathon") — тема «Закат» (132 BPM, Am–Em–F–
   if (s._chords !== MUSIC.marathon.chords) throw new Error('прогрессия не marathon');
 });
 
+check('setMusic("neon") — тема ур.17 (152 BPM, с speed=4 темп в 4 раза быстрее)', () => {
+  if (!MUSIC.neon) throw new Error('нет рецепта neon');
+  const base = s.setMusic('neon');
+  if (base !== 'neon') throw new Error('id: ' + base);
+  const stepBase = s._stepDur;
+  if (Math.abs(stepBase - 60 / 152 / 4) > 1e-9) throw new Error('темп neon: ' + stepBase);
+  const fast = s.setMusic('neon', 4);
+  if (fast !== 'neon') throw new Error('id: ' + fast);
+  if (Math.abs(s._stepDur - stepBase / 4) > 1e-9) throw new Error('темп neon x4: ' + s._stepDur);
+});
+
 check('setMusic(неизвестный id) — фолбэк на классику', () => {
   const id = s.setMusic('nonexistent');
   if (id !== 'classic') throw new Error('id: ' + id);
