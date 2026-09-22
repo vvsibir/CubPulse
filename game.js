@@ -152,7 +152,7 @@ class Camera {
    ========================================================= */
 const BPM = 138;
 const STEP_DUR = 60 / BPM / 4;  // длительность 16-й ноты (сек)
-const TOTAL_STEPS = 64;          // 4 такта по 16 шагов
+const TOTAL_STEPS = 64;          // базовая длина петли: 4 такта по 16 шагов; тема может задать свою (steps)
 const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
 // Музыкальные темы уровней: прогрессия A-минор (classic — как было),
@@ -264,9 +264,9 @@ const SCALE = {
   minor: [0, 2, 3, 5, 7, 8, 10],
 };
 
-function makeMusic(bpm, root, mode, degrees, arpPat, melPat) {
+function makeMusic(bpm, root, mode, degrees, arpPat, melPat, melPat2) {
   const at = (p) => SCALE[mode][p % 7] + Math.floor(p / 7) * 12; // абсолютный оффсет ступени
-  const chords = degrees.map((deg) => {
+  const build = (deg, melP) => {
     const r  = root + at(deg);        // корень аккорда (3-я октава)
     const t3 = root + at(deg + 2);    // терция
     const t5 = root + at(deg + 4);    // квинта
@@ -285,10 +285,15 @@ function makeMusic(bpm, root, mode, degrees, arpPat, melPat) {
       [[0, t3 + 12], [4, t5 + 12], [8, t3 + 12], [12, t5 + 12]],
       [[0, r + 12], [6, t3 + 12], [10, t5 + 12], [12, t3 + 12]],
     ];
-    const mel = mels[melPat % 4].map(([s, n]) => [s, midi(n)]);
+    const mel = mels[melP % 4].map(([s, n]) => [s, midi(n)]);
     return { bass, arp, pad, mel };
-  });
-  return { bpm, chords };
+  };
+  const chords = degrees.map((deg) => build(deg, melPat));
+  // melPat2 — продолжение мелодии: та же прогрессия второй раз, но новая фраза
+  if (melPat2 !== undefined) {
+    for (const deg of degrees) chords.push(build(deg, melPat2));
+  }
+  return { bpm, chords, steps: chords.length * 16 };
 }
 
 // Рецепты тем уровней 4-20 (тоника в диапазоне A2..F3, все лады и темпы разные)
@@ -306,13 +311,13 @@ const MUSIC_RECIPES = [
   { key: 'volt',     bpm: 149, root: 48, mode: 'major', deg: [0,3,0,5], arp: 0, mel: 1 },
   { key: 'storm',    bpm: 126, root: 45, mode: 'minor', deg: [0,5,6,3], arp: 3, mel: 2 },
   { key: 'obsidian', bpm: 136, root: 45, mode: 'minor', deg: [0,3,6,3], arp: 2, mel: 1 },
-  { key: 'neon',     bpm: 152, root: 48, mode: 'major', deg: [0,5,4,5], arp: 1, mel: 0 },
+  { key: 'neon',     bpm: 152, root: 48, mode: 'major', deg: [0,5,4,5], arp: 1, mel: 0, mel2: 1 }, // уровень 17: мелодия продолжена до 8 тактов (вторая фраза)
   { key: 'mint',     bpm: 131, root: 52, mode: 'minor', deg: [0,5,4,6], arp: 0, mel: 3 },
   { key: 'slate',    bpm: 127, root: 50, mode: 'minor', deg: [0,3,5,4], arp: 2, mel: 0 },
   { key: 'rainbow',  bpm: 145, root: 53, mode: 'minor', deg: [0,4,5,3], arp: 0, mel: 2 },
 ];
 for (const r of MUSIC_RECIPES) {
-  MUSIC[r.key] = makeMusic(r.bpm, r.root, r.mode, r.deg, r.arp, r.mel);
+  MUSIC[r.key] = makeMusic(r.bpm, r.root, r.mode, r.deg, r.arp, r.mel, r.mel2);
 }
 
 class Sound {
@@ -329,6 +334,7 @@ class Sound {
     // Музыкальная тема по умолчанию — классическая (как было)
     this._chords = MUSIC.classic.chords;
     this._stepDur = STEP_DUR;
+    this._steps = TOTAL_STEPS;
     try { this.muted = localStorage.getItem('gm_muted') === '1'; } catch (e) {}
   }
 
@@ -338,6 +344,7 @@ class Sound {
     const m = MUSIC[id] || MUSIC.classic;
     this._chords = m.chords;
     this._stepDur = 60 / m.bpm / 4 / Math.max(0.05, speed);
+    this._steps = m.steps || TOTAL_STEPS;
     return (id in MUSIC) ? id : 'classic';
   }
 
@@ -630,7 +637,7 @@ class Sound {
     let guard = 0;
     while (this._nextTime < this.ctx.currentTime + 0.12 && guard++ < 32) {
       this._playStep(this._step, this._nextTime);
-      this._step = (this._step + 1) % TOTAL_STEPS;
+      this._step = (this._step + 1) % this._steps;
       this._nextTime += this._stepDur;
     }
   }

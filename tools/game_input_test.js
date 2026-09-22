@@ -385,9 +385,10 @@ check('новые уровни 4 и 20: своя процедурная мело
   if (t4.playerA === t20.playerA) throw new Error('палитры ур.4 и ур.20 совпадают');
 });
 
-check('уровень 17: musicSpeed=2 ускоряет темп, под низкими платформами — свисающие шипы', () => {
+check('уровень 17: musicSpeed=2 ускоряет темп, мелодия продолжена (128 шагов), шипы под низкими платформами', () => {
   const g = boot('?level=17');
   if (Math.abs(g.sound._stepDur - 60 / 152 / 4 / 2) > 1e-9) throw new Error('темп ур.17 (musicSpeed): ' + g.sound._stepDur);
+  if (g.sound._steps !== 128) throw new Error('мелодия ур.17 должна быть 128 шагов: ' + g.sound._steps);
   const plats = g.level.objects.filter((o) => o.type === 'platform' && o.y === 560);
   if (plats.length !== 7) throw new Error('низких платформ: ' + plats.length);
   const flips = g.level.objects.filter((o) => o.type === 'spike' && o.flip && o.y === 580);

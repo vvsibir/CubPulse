@@ -157,6 +157,31 @@ check('setMusic("neon") — тема ур.17 (152 BPM, с speed=4 темп в 4 
   if (Math.abs(s._stepDur - stepBase / 4) > 1e-9) throw new Error('темп neon x4: ' + s._stepDur);
 });
 
+check('setMusic("neon") — тема ур.17: мелодия продолжена до 8 тактов (128 шагов)', () => {
+  const s2 = new Sound();
+  s2.unlock();
+  s2.setMusic('neon');
+  if (!MUSIC.neon) throw new Error('нет рецепта neon');
+  if (MUSIC.neon.chords.length !== 8) throw new Error('аккордов neon: ' + MUSIC.neon.chords.length);
+  if (MUSIC.neon.steps !== 128) throw new Error('шагов neon: ' + MUSIC.neon.steps);
+  if (s2._steps !== 128) throw new Error('звук._steps: ' + s2._steps);
+  // вторая фраза: та же прогрессия, но другая мелодическая фигура
+  const a = MUSIC.neon.chords[0], b = MUSIC.neon.chords[4];
+  if (b.bass !== a.bass) throw new Error('вторая фраза не повторяет прогрессию');
+  if (b.arp.length !== 4) throw new Error('арпеджио второй фразы: ' + b.arp.length);
+  if (JSON.stringify(b.mel) === JSON.stringify(a.mel)) throw new Error('мелодия не продолжена: фразы одинаковы');
+  // остальные темы остались 4-тактовыми
+  s2.setMusic('classic');
+  if (s2._steps !== 64) throw new Error('классика должна остаться 64 шага: ' + s2._steps);
+  // секвенсор проходит все 128 шагов (такты 0..7) без сбоев
+  s2.setMusic('neon');
+  s2._step = 0;
+  for (let i = 0; i < 128; i++) {
+    s2._playStep(s2._step, 0.1 + i * s2._stepDur);
+    s2._step = (s2._step + 1) % 128;
+  }
+});
+
 check('setMusic(неизвестный id) — фолбэк на классику', () => {
   const id = s.setMusic('nonexistent');
   if (id !== 'classic') throw new Error('id: ' + id);
