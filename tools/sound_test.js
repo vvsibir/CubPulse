@@ -165,11 +165,14 @@ check('setMusic("neon") — тема ур.17: мелодия продолжен�
   if (MUSIC.neon.chords.length !== 8) throw new Error('аккордов neon: ' + MUSIC.neon.chords.length);
   if (MUSIC.neon.steps !== 128) throw new Error('шагов neon: ' + MUSIC.neon.steps);
   if (s2._steps !== 128) throw new Error('звук._steps: ' + s2._steps);
-  // вторая фраза: та же прогрессия, но другая мелодическая фигура
+  // вторая половина начинается как первая (такты 4-6 повторяют фразу), концовка — другая
   const a = MUSIC.neon.chords[0], b = MUSIC.neon.chords[4];
-  if (b.bass !== a.bass) throw new Error('вторая фраза не повторяет прогрессию');
-  if (b.arp.length !== 4) throw new Error('арпеджио второй фразы: ' + b.arp.length);
-  if (JSON.stringify(b.mel) === JSON.stringify(a.mel)) throw new Error('мелодия не продолжена: фразы одинаковы');
+  const f = MUSIC.neon.chords[3], e = MUSIC.neon.chords[7];
+  if (b.bass !== a.bass) throw new Error('вторая половина не повторяет прогрессию');
+  if (JSON.stringify(b.mel) !== JSON.stringify(a.mel)) throw new Error('вторая половина не начинается как первая');
+  if (JSON.stringify(f.mel) === JSON.stringify(e.mel)) throw new Error('концовка не изменена');
+  if (JSON.stringify(e.mel.slice(0, 3)) !== JSON.stringify(f.mel.slice(0, 3))) throw new Error('начало финального такта отлично от основной фразы');
+  if (e.mel[3][1] === f.mel[3][1]) throw new Error('последняя нота та же: концовка не другая');
   // остальные темы остались 4-тактовыми
   s2.setMusic('classic');
   if (s2._steps !== 64) throw new Error('классика должна остаться 64 шага: ' + s2._steps);

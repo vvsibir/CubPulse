@@ -280,18 +280,21 @@ function makeMusic(bpm, root, mode, degrees, arpPat, melPat, melPat2) {
     const arp = arps[arpPat % 4].map(midi);
     const pad = [r, t3, t5].map(midi);
     const mels = [
-      [[0, r + 12], [4, t3 + 12], [8, t5 + 12], [12, r + 12]],
+      [[0, r + 12], [4, t3 + 12], [8, t5 + 12], [12, r + 12]],   // основная фраза
       [[0, t5 + 12], [3, r + 12], [8, t3 + 12], [11, t5 + 12]],
       [[0, t3 + 12], [4, t5 + 12], [8, t3 + 12], [12, t5 + 12]],
       [[0, r + 12], [6, t3 + 12], [10, t5 + 12], [12, t3 + 12]],
+      [[0, r + 12], [4, t3 + 12], [8, t5 + 12], [12, t5 + 12]],   // как основная, но другая концовка (квинта)
     ];
-    const mel = mels[melP % 4].map(([s, n]) => [s, midi(n)]);
+    const mel = mels[melP % mels.length].map(([s, n]) => [s, midi(n)]);
     return { bass, arp, pad, mel };
   };
   const chords = degrees.map((deg) => build(deg, melPat));
-  // melPat2 — продолжение мелодии: та же прогрессия второй раз, но новая фраза
+  // melPat2 — продолжение мелодии: та же прогрессия второй раз. Число — один
+  // паттерн на все такты; массив из 4 — свой паттерн для каждого такта.
   if (melPat2 !== undefined) {
-    for (const deg of degrees) chords.push(build(deg, melPat2));
+    const pats = Array.isArray(melPat2) ? melPat2 : [melPat2, melPat2, melPat2, melPat2];
+    degrees.forEach((deg, i) => chords.push(build(deg, pats[i])));
   }
   return { bpm, chords, steps: chords.length * 16 };
 }
@@ -311,7 +314,7 @@ const MUSIC_RECIPES = [
   { key: 'volt',     bpm: 149, root: 48, mode: 'major', deg: [0,3,0,5], arp: 0, mel: 1 },
   { key: 'storm',    bpm: 126, root: 45, mode: 'minor', deg: [0,5,6,3], arp: 3, mel: 2 },
   { key: 'obsidian', bpm: 136, root: 45, mode: 'minor', deg: [0,3,6,3], arp: 2, mel: 1 },
-  { key: 'neon',     bpm: 152, root: 48, mode: 'major', deg: [0,5,4,5], arp: 1, mel: 0, mel2: 1 }, // уровень 17: мелодия продолжена до 8 тактов (вторая фраза)
+  { key: 'neon',     bpm: 152, root: 48, mode: 'major', deg: [0,5,4,5], arp: 1, mel: 0, mel2: [0,0,0,4] }, // уровень 17: вторая половина как первая, но с другой концовкой
   { key: 'mint',     bpm: 131, root: 52, mode: 'minor', deg: [0,5,4,6], arp: 0, mel: 3 },
   { key: 'slate',    bpm: 127, root: 50, mode: 'minor', deg: [0,3,5,4], arp: 2, mel: 0 },
   { key: 'rainbow',  bpm: 145, root: 53, mode: 'minor', deg: [0,4,5,3], arp: 0, mel: 2 },
