@@ -816,6 +816,13 @@ class Game {
       };
       bind('#btn-next', () => this.nextLevel());
       bind('#btn-select', () => { window.location.href = 'levels.html'; });
+      // Тап по экрану меню (мимо кнопок) после смерти — рестарт уровня
+      this.menu.addEventListener('pointerdown', (e) => {
+        if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
+        if (this.state === 'dead' && this.deathTimer > 0.4 && e.target === this.menu) {
+          this.onPressStart();
+        }
+      });
     }
 
     this.lastTime = performance.now();
@@ -850,10 +857,11 @@ class Game {
     return px > CONFIG.W - 70 && px < CONFIG.W - 8 && py > 56 && py < 110;
   }
 
-  // Показать/скрыть HTML-меню (только при победе; после смерти — рестарт тапом)
+  // Показать/скрыть HTML-меню: при победе — сразу, после смерти — после задержки
+  // (кнопки «Следующий»/«Выбор уровня»; рестарт — тапом мимо кнопок)
   updateMenu() {
     if (!this.menu) return;
-    const show = this.state === 'won';
+    const show = this.state === 'won' || (this.state === 'dead' && this.deathTimer > 0.3);
     this.menu.classList.toggle('show', show);
   }
 

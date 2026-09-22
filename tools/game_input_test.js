@@ -54,9 +54,10 @@ global.window = {
 };
 global.localStorage = { getItem: () => null, setItem: () => {} };
 
-// Мок меню победы/поражения (#menu с кнопками)
+// Мок меню (#menu с кнопками «Следующий»/«Выбор уровня»; pointerdown для тап-рестарта)
 const menuBtns = {};
 const menuEl = {
+  _ptr: [],
   classList: {
     _set: new Set(),
     add(c) { this._set.add(c); },
@@ -70,6 +71,7 @@ const menuEl = {
     contains(c) { return this._set.has(c); },
   },
   querySelector(sel) { return menuBtns[sel] || null; },
+  addEventListener(type, fn) { if (type === 'pointerdown') this._ptr.push(fn); },
 };
 for (const sel of ['#btn-restart', '#btn-next', '#btn-select']) {
   menuBtns[sel] = {
@@ -92,6 +94,7 @@ const clearListeners = () => {
   for (const k of Object.keys(events)) delete events[k];
   for (const k of Object.keys(docEvents)) delete docEvents[k];
   for (const k of Object.keys(winHandlers)) delete winHandlers[k];
+  menuEl._ptr.length = 0;
 };
 const boot = (search) => {
   clearListeners();
@@ -277,28 +280,32 @@ check('победа: прогресс и полоса доводятся до 10
   if (calls.rects[1][2] !== 400) throw new Error('полоса при победе не полная: ' + calls.rects[1][2]);
 });
 
-check('меню: при победе показывается, при смерти скрыто (рестарт — тапом)', () => {
+check('меню: при победе и после смерти показывается, во время игры скрыто', () => {
   const g = boot('');
   // во время игры скрыто
   if (menuEl.classList.contains('show')) throw new Error('меню видно во время игры');
-  // после смерти меню не показывается даже после задержки
-  g.state = 'dead'; g.deathTimer = 0.5;
+  // сразу после смерти ещё скрыто (задержка 0.3 c)
+  g.state = 'dead'; g.deathTimer = 0.1;
   g.updateMenu();
-  if (menuEl.classList.contains('show')) throw new Error('меню показано после смерти');
+  if (menuEl.classList.contains('show')) throw new Error('меню показано раньше задержки');
+  // после задержки — «Следующий»/«Выбор уровня» видно (без «Заново»)
+  g.deathTimer = 0.5;
+  g.updateMenu();
+  if (!menuEl.classList.contains('show')) throw new Error('меню не показано после смерти');
   // при победе — показывается сразу
   g.state = 'won';
   g.updateMenu();
   if (!menuEl.classList.contains('show')) throw new Error('меню не показано при победе');
 });
 
-check('тап после смерти перезапускает уровень; «Следующий» и «Выбор уровня» ведут по ссылкам', () => {
+check('тап после смерти (мимо кнопок) перезапускает уровень; кнопки ведут по ссылкам', () => {
   const g = boot('');
   g.attempts = 1;
   g.state = 'dead'; g.deathTimer = 0.5;
   g.updateMenu();
 
-  // Тап по экрану — перезапуск уровня (кнопки «Заново» больше нет)
-  fire('pointerdown', ptr(640, 360));
+  // Тап по экрану меню (мимо кнопок) — перезапуск уровня
+  menuEl._ptr.forEach((fn) => fn({ target: menuEl, clientX: 640, clientY: 400, preventDefault() {}, isPrimary: true }));
   if (g.state !== 'playing') throw new Error('тап не перезапустил игру: ' + g.state);
   if (g.attempts !== 2) throw new Error('попыток: ' + g.attempts);
   if (menuEl.classList.contains('show')) throw new Error('меню не скрылось после рестарта');
