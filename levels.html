@@ -129,10 +129,21 @@
   // Скорость игрока (CONFIG.SPEED) — только для показа «секунд прохождения»
   const SPEED = 480;
 
+  // Имена полных тем на выбор уровней: строковая ссылка level.theme.
+  // Зеркало THEMES из game.js — здесь нужны только имена для карточек.
+  const THEME_NAMES = { default: 'Классика' };
+  function themeName(L) {
+    const t = L.theme;
+    if (!t) return '';
+    if (typeof t === 'string') return THEME_NAMES[t] || '';
+    return t.name || '';
+  }
+
   function buildCard(id, L) {
     const hue1 = (L.bg && L.bg.start !== undefined) ? L.bg.start : 220;
     const hue2 = (L.bg && L.bg.end !== undefined) ? L.bg.end : 280;
     const secs = (L.length / SPEED).toFixed(1);
+    const tn = themeName(L);
 
     const a = document.createElement('a');
     a.className = 'card';
@@ -144,7 +155,7 @@
       '<div class="name">' + (L.name || ('Level ' + id)) + '</div>' +
       '<div class="meta">длина ' + L.length + ' px · ~' + secs + ' сек</div>' +
       '<div class="meta">объектов: ' + (L.objects ? L.objects.length : '?') + '</div>' +
-      (L.theme && L.theme.name ? '<div class="meta">тема: ' + L.theme.name + '</div>' : '') +
+      (tn ? '<div class="meta">тема: ' + tn + '</div>' : '') +
       '<div class="play">Играть →</div>';
     return a;
   }

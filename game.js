@@ -707,23 +707,32 @@ function checkCollision(player, obj) {
 }
 
 /* =========================================================
-   ТЕМЫ ОФОРМЛЕНИЯ УРОВНЕЙ
+   ТЕМЫ УРОВНЕЙ: полная тема = музыка (MUSIC) + оформление
+   (bg, colors). Реестр THEMES — ключи, на которые level.theme
+   может ссылаться строкой. «default» — тема «Классика»
+   (уровень 2); она же резервная для уровней без своей темы.
    ========================================================= */
-// Тема по умолчанию — «Классика» (как было изначально; уровень 2)
-const DEFAULT_THEME = {
-  bg: { start: 220, end: 280 },
-  colors: {
-    playerA: '#ffe066',
-    playerB: '#ff9066',
-    spike: '#ff4d6d',
-    block: '#00e0ff',
-    blockFill: 'rgba(0, 200, 255, 0.15)',
-    platform: '#a060ff',
-    finishA: '#ffe066',
-    finishB: '#ff64c8',
-    ground: '#00e0ff',
+const THEMES = {
+  default: {
+    name: 'Классика',
+    music: 'classic', // MUSIC.classic: Am–F–C–G, 138 BPM
+    bg: { start: 220, end: 280 },
+    colors: {
+      playerA: '#ffe066',
+      playerB: '#ff9066',
+      spike: '#ff4d6d',
+      block: '#00e0ff',
+      blockFill: 'rgba(0, 200, 255, 0.15)',
+      platform: '#a060ff',
+      finishA: '#ffe066',
+      finishB: '#ff64c8',
+      ground: '#00e0ff',
+    },
   },
 };
+
+// Резерв для уровней без своей темы — это и есть THEMES.default
+const DEFAULT_THEME = THEMES.default;
 
 // HEX -> rgba() с прозрачностью (для пульсирующего финиша)
 function hexToRgba(hex, a) {
@@ -754,8 +763,8 @@ class Game {
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.sound = new Sound();
-    // Музыкальная тема уровня (classic/level1/marathon; без ключа — классика)
-    this.sound.setMusic(this.level.music);
+    // Музыкальная тема уровня: своя (level.music) или из полной темы level.theme
+    this.sound.setMusic(this.level.music || this._levelTheme().music);
 
     // Управление клавиатурой
     window.addEventListener('keydown', (e) => {
@@ -996,12 +1005,21 @@ class Game {
 
   /* ---------- ОТРИСОВКА ---------- */
 
-  // Тема оформления: свои цвета уровня (level.theme.colors) или по умолчанию
-  _theme() {
+  // Полная тема уровня: строка-ссылка на реестр THEMES (напр. 'default') или
+  // собственная inline-тема { name?, music?, bg?, colors }. Без своей — THEMES.default.
+  _levelTheme() {
     const t = this.level.theme;
+    if (t && typeof t === 'string') return THEMES[t] || THEMES.default;
+    return t || THEMES.default;
+  }
+
+  // Тема оформления: свои цвета уровня (level.theme) или по умолчанию
+  _theme() {
+    const t = this._levelTheme();
     return {
-      bg: this.level.bg || DEFAULT_THEME.bg,
-      c: (t && t.colors) || DEFAULT_THEME.colors,
+      name: t.name || null,
+      bg: this.level.bg || t.bg,
+      c: t.colors || DEFAULT_THEME.colors,
     };
   }
 
