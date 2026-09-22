@@ -293,7 +293,7 @@ function makeMusic(bpm, root, mode, degrees, arpPat, melPat) {
 
 // Рецепты тем уровней 4-20 (тоника в диапазоне A2..F3, все лады и темпы разные)
 const MUSIC_RECIPES = [
-  { key: 'aurora',   bpm: 142, root: 45, mode: 'minor', deg: [0,3,5,4], arp: 0, mel: 0 },
+  { key: 'aurora',   bpm: 284, root: 45, mode: 'minor', deg: [0,3,5,4], arp: 0, mel: 0 }, // уровень 4: ускоренный бит (2x)
   { key: 'lava',     bpm: 150, root: 48, mode: 'major', deg: [0,4,5,3], arp: 1, mel: 2 },
   { key: 'ice',      bpm: 134, root: 48, mode: 'minor', deg: [0,5,3,6], arp: 2, mel: 1 },
   { key: 'desert',   bpm: 138, root: 50, mode: 'major', deg: [0,3,4,3], arp: 3, mel: 0 },
