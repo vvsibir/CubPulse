@@ -743,7 +743,7 @@ class Game {
     this.camera = new Camera();
     this.particles = [];
     this.attempts = 1;
-    this.state = 'playing'; // playing | dead | won
+    this.state = 'ready'; // ready (ждём первый тап) | playing | dead | won
     this.deathTimer = 0;
     this.jumpHeld = false;
     this.time = 0;
@@ -762,8 +762,12 @@ class Game {
       this.sound.unlock();
       if (e.code === 'Space') {
         e.preventDefault();
-        if (!this.jumpHeld) this.onPressStart();
-        this.jumpHeld = true;
+        if (this.state === 'ready') {
+          this.onPressStart(); // старт без прыжка; удержание пробела не прыгает
+        } else if (!this.jumpHeld) {
+          this.onPressStart();
+          this.jumpHeld = true;
+        }
       }
       if (e.code === 'KeyR') this.restart();
       if (e.code === 'KeyM') this.sound.toggleMute();
@@ -780,8 +784,8 @@ class Game {
       if (!e.isPrimary) return; // игнорируем второй палец
       try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
       if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
-      this.onPressStart();
-      this.jumpHeld = true;
+      const started = this.onPressStart();
+      if (!started) this.jumpHeld = true; // стартовый тап не создаёт прыжок при удержании
     });
     canvas.addEventListener('pointerup', (e) => {
       if (e.isPrimary) this.jumpHeld = false;
@@ -810,9 +814,15 @@ class Game {
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  // Обработка начала нажатия
+  // Обработка начала нажатия. Возвращает true, если это был стартовый тап (музыка + бег, без прыжка).
   onPressStart() {
     this.sound.unlock();
+    if (this.state === 'ready') {
+      // Первый тап/пробел — включаем музыку и запускаем бег, без прыжка
+      this.sound.startMusic();
+      this.state = 'playing';
+      return true;
+    }
     if (this.state === 'playing') {
       this.sound.startMusic(); // старт/продолжение музыки с первого нажатия (no-op, если играет)
       if (this.player.jump()) this.sound.jump();
@@ -821,6 +831,7 @@ class Game {
     } else if (this.state === 'won') {
       this.restart();
     }
+    return false;
   }
 
   // Попадание в иконку динамика (в координатах канваса 1280x720)
@@ -1289,6 +1300,26 @@ class Game {
   drawOverlay() {
     const ctx = this.ctx;
     const c = this._theme().c;
+
+    if (this.state === 'ready') {
+      const pulse = 0.55 + 0.25 * Math.sin(this.time * 4);
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, 0, CONFIG.W, CONFIG.H);
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = c.playerA;
+      ctx.shadowColor = c.playerB;
+      ctx.shadowBlur = 30 * pulse;
+      ctx.font = 'bold 58px Arial';
+      ctx.fillText('ТАПНИ, ЧТОБЫ НАЧАТЬ', CONFIG.W / 2, CONFIG.H / 2 - 40);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = 'bold 24px Arial';
+      ctx.fillText('первый тап включит музыку и запустит бег · или пробел', CONFIG.W / 2, CONFIG.H / 2 + 20);
+      ctx.restore();
+    }
 
     if (this.state === 'dead' && this.deathTimer > 0.3) {
       ctx.save();
