@@ -20,7 +20,7 @@
     bg: { start: 300, end: 330 },
     // Музыкальная тема из game.js (MUSIC_RECIPES)
     music: 'neon',
-    musicSpeed: 4, // мелодия ускорена в 4 раза (608 BPM по шагу 16-х)
+    musicSpeed: 2, // мелодия ускорена в 2 раза (304 BPM по шагу 16-х)
     theme: {
       name: 'Неон-розовый',
       colors: {
