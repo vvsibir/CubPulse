@@ -807,14 +807,13 @@ class Game {
     // Запрет контекстного меню (правая кнопка мыши / длинный тач) по всей странице
     document.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // Меню победы/поражения (HTML-кнопки поверх канваса)
+    // Меню победы (HTML-кнопки поверх канваса; после смерти — рестарт тапом)
     this.menu = document.getElementById('menu') || null;
     if (this.menu) {
       const bind = (sel, fn) => {
         const el = this.menu.querySelector(sel);
         if (el) el.addEventListener('click', fn);
       };
-      bind('#btn-restart', () => this.restart());
       bind('#btn-next', () => this.nextLevel());
       bind('#btn-select', () => { window.location.href = 'levels.html'; });
     }
@@ -851,10 +850,10 @@ class Game {
     return px > CONFIG.W - 70 && px < CONFIG.W - 8 && py > 56 && py < 110;
   }
 
-  // Показать/скрыть HTML-меню (появляется при победе и с задержкой после смерти)
+  // Показать/скрыть HTML-меню (только при победе; после смерти — рестарт тапом)
   updateMenu() {
     if (!this.menu) return;
-    const show = this.state === 'won' || (this.state === 'dead' && this.deathTimer > 0.3);
+    const show = this.state === 'won';
     this.menu.classList.toggle('show', show);
   }
 
@@ -1355,6 +1354,10 @@ class Game {
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 28px Arial';
       ctx.fillText(`Попыток: ${this.attempts}`, CONFIG.W / 2, CONFIG.H / 2 + 30);
+
+      ctx.font = 'bold 24px Arial';
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillText('Тапни, чтобы заново', CONFIG.W / 2, CONFIG.H / 2 + 72);
       ctx.restore();
     }
 

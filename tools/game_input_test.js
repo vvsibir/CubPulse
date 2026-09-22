@@ -1,8 +1,7 @@
 // Интеграционный тест: управление через Pointer Events, отсутствие double-tap,
 // выбор уровня по параметру запроса (?level=N)
 const fs = require('fs');
-const path = require('path');
-const root = path.join(__dirname, '..') + '/';
+const root = 'C:/git/gm-jump/';
 const levelFiles = fs.readdirSync(root)
   .filter((f) => /^level-\d+\.js$/.test(f))
   .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
@@ -278,33 +277,31 @@ check('победа: прогресс и полоса доводятся до 10
   if (calls.rects[1][2] !== 400) throw new Error('полоса при победе не полная: ' + calls.rects[1][2]);
 });
 
-check('меню победы/поражения: показ по состоянию и задержке', () => {
+check('меню: при победе показывается, при смерти скрыто (рестарт — тапом)', () => {
   const g = boot('');
   // во время игры скрыто
   if (menuEl.classList.contains('show')) throw new Error('меню видно во время игры');
-  // сразу после смерти ещё скрыто (задержка 0.3 c)
-  g.state = 'dead'; g.deathTimer = 0.1;
+  // после смерти меню не показывается даже после задержки
+  g.state = 'dead'; g.deathTimer = 0.5;
   g.updateMenu();
-  if (menuEl.classList.contains('show')) throw new Error('меню показано раньше задержки');
-  // после задержки — показывается
-  g.deathTimer = 0.5;
-  g.updateMenu();
-  if (!menuEl.classList.contains('show')) throw new Error('меню не показано после смерти');
+  if (menuEl.classList.contains('show')) throw new Error('меню показано после смерти');
   // при победе — показывается сразу
   g.state = 'won';
   g.updateMenu();
   if (!menuEl.classList.contains('show')) throw new Error('меню не показано при победе');
 });
 
-check('кнопки меню: «Заново» рестарт, «Следующий» и «Выбор уровня» ведут по ссылкам', () => {
+check('тап после смерти перезапускает уровень; «Следующий» и «Выбор уровня» ведут по ссылкам', () => {
   const g = boot('');
+  g.attempts = 1;
   g.state = 'dead'; g.deathTimer = 0.5;
   g.updateMenu();
 
-  // «Заново»: игра перезапущена, меню скрыто
-  menuBtns['#btn-restart'].click();
-  if (g.state !== 'playing') throw new Error('«Заново» не перезапустило игру');
-  if (menuEl.classList.contains('show')) throw new Error('меню не скрылось после «Заново»');
+  // Тап по экрану — перезапуск уровня (кнопки «Заново» больше нет)
+  fire('pointerdown', ptr(640, 360));
+  if (g.state !== 'playing') throw new Error('тап не перезапустил игру: ' + g.state);
+  if (g.attempts !== 2) throw new Error('попыток: ' + g.attempts);
+  if (menuEl.classList.contains('show')) throw new Error('меню не скрылось после рестарта');
 
   // «Следующий»: с уровня 1 — на уровень 2
   menuBtns['#btn-next'].click();
@@ -317,6 +314,18 @@ check('кнопки меню: «Заново» рестарт, «Следующ�
   if (global.window.location.href !== 'levels.html') {
     throw new Error('«Выбор уровня»: ' + global.window.location.href);
   }
+});
+
+check('game over: оверлей рисует подсказку «Тапни, чтобы заново»', () => {
+  const g = boot('');
+  g.state = 'dead'; g.deathTimer = 0.5;
+  const texts = [];
+  g.ctx = new Proxy({}, {
+    get: (t, p) => (p === 'createLinearGradient' ? () => ({ addColorStop() {} }) : p === 'fillText' ? (s) => texts.push(String(s)) : () => undefined),
+    set: () => true,
+  });
+  g.draw();
+  if (!texts.some((s) => s.includes('Тапни, чтобы заново'))) throw new Error('нет подсказки рестарта тапом');
 });
 
 check('«Следующий» с уровня 3 ведёт на 4, с последнего (20) — на экран выбора уровней', () => {

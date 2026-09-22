@@ -34,7 +34,7 @@
     -webkit-touch-callout: none; /* без контекстного меню/выделения при длинном таче */
   }
   #stage { position: relative; }
-  /* Меню победы/поражения (HTML-кнопки поверх канваса) */
+  /* Меню победы (HTML-кнопки поверх канваса; после смерти — рестарт тапом) */
   #menu {
     position: absolute; inset: 0;
     display: none;
@@ -80,7 +80,6 @@
   <div id="stage">
     <canvas id="game" width="1280" height="720"></canvas>
     <div id="menu">
-      <button class="menu-btn" id="btn-restart">Заново</button>
       <button class="menu-btn" id="btn-next">Следующий</button>
       <button class="menu-btn menu-btn--select" id="btn-select">Выбор уровня</button>
     </div>
