@@ -168,12 +168,12 @@ function build(id) {
   objs.push(finish(length - 400));
 
   // Уровень 17: свисающие шипы (flip) под самыми низкими платформами (y=560).
-  // Ряд из 4 шипов по 40 px, по центру платформы, от нижней кромки (y=580).
+  // Ряд из 3 шипов по 40 px, по центру платформы, от нижней кромки (y=580).
   if (id === 17) {
     const lows = objs.filter((o) => o.type === 'platform' && o.y === 560);
     for (const p of lows) {
-      const start = Math.round(p.x + (p.w - 160) / 2);
-      for (let i = 0; i < 4; i++) {
+      const start = Math.round(p.x + (p.w - 120) / 2);
+      for (let i = 0; i < 3; i++) {
         objs.push({ type: 'spike', x: start + i * 40, y: 580, w: 40, h: 40, flip: true, _sec: p._sec });
       }
     }

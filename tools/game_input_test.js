@@ -392,12 +392,14 @@ check('уровень 17: musicSpeed=2 ускоряет темп, мелодия
   const plats = g.level.objects.filter((o) => o.type === 'platform' && o.y === 560);
   if (plats.length !== 7) throw new Error('низких платформ: ' + plats.length);
   const flips = g.level.objects.filter((o) => o.type === 'spike' && o.flip && o.y === 580);
-  if (flips.length !== plats.length * 4) throw new Error('шипов под платформами: ' + flips.length);
+  if (flips.length !== plats.length * 3) throw new Error('шипов под платформами: ' + flips.length);
   for (const p of plats) {
-    const row = flips.filter((s) => s.x >= p.x - 15 && s.x + 40 <= p.x + p.w + 15).sort((a, b) => a.x - b.x);
-    if (row.length !== 4) throw new Error('под платформой x=' + p.x + ': ' + row.length + ' шипов');
-    if (row[0].x > p.x + 10) throw new Error('ряд не покрывает левый край: ' + p.x);
-    if (row[3].x + 40 < p.x + p.w - 10) throw new Error('ряд не покрывает правый край: ' + p.x);
+    const row = flips.filter((s) => s.x >= p.x - 25 && s.x + 40 <= p.x + p.w + 25).sort((a, b) => a.x - b.x);
+    if (row.length !== 3) throw new Error('под платформой x=' + p.x + ': ' + row.length + ' шипов');
+    // ряд из 3 шипов (120 px) центрируется по платформе
+    const rc = (row[0].x + (row[2].x + 40)) / 2;
+    const pc = p.x + p.w / 2;
+    if (Math.abs(rc - pc) > 1.5) throw new Error('ряд не по центру платформы x=' + p.x + ': ' + rc + ' vs ' + pc);
   }
 });
 
