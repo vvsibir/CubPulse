@@ -385,6 +385,21 @@ check('новые уровни 4 и 20: своя процедурная мело
   if (t4.playerA === t20.playerA) throw new Error('палитры ур.4 и ур.20 совпадают');
 });
 
+check('уровень 17: musicSpeed=2 ускоряет темп, под низкими платформами — свисающие шипы', () => {
+  const g = boot('?level=17');
+  if (Math.abs(g.sound._stepDur - 60 / 152 / 4 / 2) > 1e-9) throw new Error('темп ур.17 (musicSpeed): ' + g.sound._stepDur);
+  const plats = g.level.objects.filter((o) => o.type === 'platform' && o.y === 560);
+  if (plats.length !== 7) throw new Error('низких платформ: ' + plats.length);
+  const flips = g.level.objects.filter((o) => o.type === 'spike' && o.flip && o.y === 580);
+  if (flips.length !== plats.length * 4) throw new Error('шипов под платформами: ' + flips.length);
+  for (const p of plats) {
+    const row = flips.filter((s) => s.x >= p.x - 15 && s.x + 40 <= p.x + p.w + 15).sort((a, b) => a.x - b.x);
+    if (row.length !== 4) throw new Error('под платформой x=' + p.x + ': ' + row.length + ' шипов');
+    if (row[0].x > p.x + 10) throw new Error('ряд не покрывает левый край: ' + p.x);
+    if (row[3].x + 40 < p.x + p.w - 10) throw new Error('ряд не покрывает правый край: ' + p.x);
+  }
+});
+
 check('цветовые темы: уровни 1 и 3 свои, уровень 2 — текущая (по умолчанию)', () => {
   const g1 = boot('?level=1');
   const g2 = boot('?level=2');

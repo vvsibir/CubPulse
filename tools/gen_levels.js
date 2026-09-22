@@ -29,7 +29,7 @@ const THEMES = {
   14: { name: 'Электрик',     music: 'volt',     bg: [185, 205], a: '#66e0ff', b: '#3d5cff', spike: '#ffd166', block: '#00e0ff', pf: 'rgba(0,224,255,0.15)',  plat: '#9fecff', fa: '#ffe066', fb: '#00e0ff', gr: '#00e0ff' },
   15: { name: 'Шторм',        music: 'storm',    bg: [210, 235], a: '#cfe0ff', b: '#6b7fff', spike: '#ff6b6b', block: '#8fa6d9', pf: 'rgba(143,166,217,0.15)', plat: '#d6e4ff', fa: '#ffd166', fb: '#8fa6d9', gr: '#8fa6d9' },
   16: { name: 'Обсидиан',     music: 'obsidian', bg: [260, 290], a: '#d9b3ff', b: '#8a4dff', spike: '#ff4d6d', block: '#a06bff', pf: 'rgba(160,107,255,0.15)', plat: '#cdb3ff', fa: '#ffd166', fb: '#a06bff', gr: '#a06bff' },
-  17: { name: 'Неон-розовый', music: 'neon',     bg: [300, 330], a: '#ffb3ec', b: '#ff3d9e', spike: '#66e0ff', block: '#ff6bb5', pf: 'rgba(255,107,181,0.15)', plat: '#ffd6f0', fa: '#66e0ff', fb: '#ff6bb5', gr: '#ff6bb5' },
+  17: { name: 'Неон-розовый', music: 'neon',     bg: [300, 330], a: '#ffb3ec', b: '#ff3d9e', spike: '#66e0ff', block: '#ff6bb5', pf: 'rgba(255,107,181,0.15)', plat: '#ffd6f0', fa: '#66e0ff', fb: '#ff6bb5', gr: '#ff6bb5', musicSpeed: 2 },
   18: { name: 'Мята',         music: 'mint',     bg: [165, 190], a: '#b8ffe8', b: '#5ce6c1', spike: '#ff9d5c', block: '#8ff2d6', pf: 'rgba(143,242,214,0.15)', plat: '#e0fff5', fa: '#ffe066', fb: '#8ff2d6', gr: '#8ff2d6' },
   19: { name: 'Сланец',       music: 'slate',    bg: [215, 245], a: '#e8f0ff', b: '#94a8d6', spike: '#ff8c5c', block: '#a8b8e0', pf: 'rgba(168,184,224,0.15)', plat: '#e0e8ff', fa: '#ffd166', fb: '#a8b8e0', gr: '#a8b8e0' },
   20: { name: 'Радуга',       music: 'rainbow',  bg: [0, 360],   a: '#ff9e9e', b: '#9e9eff', spike: '#9eff9e', block: '#ffe08f', pf: 'rgba(255,224,143,0.15)', plat: '#8fffe0', fa: '#ffffff', fb: '#ffb3ec', gr: '#ffe08f' },
@@ -166,6 +166,20 @@ function build(id) {
   }
 
   objs.push(finish(length - 400));
+
+  // Уровень 17: свисающие шипы (flip) под самыми низкими платформами (y=560).
+  // Ряд из 4 шипов по 40 px, по центру платформы, от нижней кромки (y=580).
+  if (id === 17) {
+    const lows = objs.filter((o) => o.type === 'platform' && o.y === 560);
+    for (const p of lows) {
+      const start = Math.round(p.x + (p.w - 160) / 2);
+      for (let i = 0; i < 4; i++) {
+        objs.push({ type: 'spike', x: start + i * 40, y: 580, w: 40, h: 40, flip: true, _sec: p._sec });
+      }
+    }
+    // стабильная сортировка по x, чтобы порядок в файле соответствовал правилу генератора
+    objs.sort((a, b) => a.x - b.x);
+  }
   return { length, objs };
 }
 
@@ -252,7 +266,7 @@ for (let id = 4; id <= 20; id++) {
     // Своя палитра фона (hue-диапазон для градиента и карточки выбора)
     bg: { start: ${t.bg[0]}, end: ${t.bg[1]} },
     // Музыкальная тема из game.js (MUSIC_RECIPES)
-    music: '${t.music}',
+    music: '${t.music}',${t.musicSpeed ? '\n    musicSpeed: ' + t.musicSpeed + ', // мелодия ускорена в ' + t.musicSpeed + ' раза (' + Math.round(152 * t.musicSpeed) + ' BPM по шагу 16-х)' : ''}
     theme: {
       name: '${t.name}',
       colors: {
