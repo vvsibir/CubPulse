@@ -37,7 +37,7 @@
     objects: [
     { type: 'spike', x: 468, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 708, y: 600, w: 40, h: 40 },
-    { type: 'block', x: 948, y: 480, w: 80, h: 160 },
+    { type: 'block', x: 948, y: 560, w: 80, h: 80 },
     { type: 'platform', x: 1276, y: 514.387302226387, w: 154, h: 20 },
     { type: 'platform', x: 1638, y: 474.38730222638696, w: 151, h: 20 },
     { type: 'platform', x: 2002, y: 474.38730222638696, w: 131, h: 20 },
@@ -64,7 +64,7 @@
     { type: 'spike', x: 5004, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 5244, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 5284, y: 600, w: 40, h: 40 },
-    { type: 'block', x: 5508, y: 480, w: 80, h: 160 },
+    { type: 'block', x: 5508, y: 560, w: 80, h: 80 },
     { type: 'spike', x: 5814, y: 600, w: 40, h: 40 },
     { type: 'platform', x: 6054, y: 535.3528658626601, w: 136, h: 20 },
     { type: 'platform', x: 6348, y: 435.3528658626601, w: 132, h: 20 },

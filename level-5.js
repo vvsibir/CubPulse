@@ -51,11 +51,11 @@
     { type: 'spike', x: 2461, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 2501, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 2541, y: 600, w: 40, h: 40 },
-    { type: 'block', x: 2600, y: 480, w: 80, h: 160 },
-    { type: 'block', x: 2925, y: 480, w: 80, h: 160 },
-    { type: 'block', x: 3105, y: 400, w: 80, h: 240 },
-    { type: 'block', x: 3285, y: 480, w: 80, h: 160 },
-    { type: 'block', x: 3615, y: 480, w: 80, h: 160 },
+    { type: 'block', x: 2600, y: 560, w: 80, h: 80 },
+    { type: 'block', x: 2925, y: 560, w: 80, h: 80 },
+    { type: 'block', x: 3105, y: 480, w: 80, h: 160 },
+    { type: 'block', x: 3285, y: 560, w: 80, h: 80 },
+    { type: 'block', x: 3615, y: 560, w: 80, h: 80 },
 
       // ---------- следующий этап ----------
     { type: 'finish', x: 5750, y: 380, w: 60, h: 260 },

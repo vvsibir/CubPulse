@@ -39,7 +39,7 @@
     { type: 'spike', x: 524, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 564, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 821, y: 600, w: 40, h: 40 },
-    { type: 'block', x: 1067, y: 480, w: 80, h: 160 },
+    { type: 'block', x: 1067, y: 560, w: 80, h: 80 },
     { type: 'spike', x: 1421, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 1461, y: 600, w: 40, h: 40 },
     { type: 'platform', x: 1738, y: 560, w: 140, h: 20 },
