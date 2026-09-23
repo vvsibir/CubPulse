@@ -770,6 +770,7 @@ class Game {
     this.bgOffset = 0;
     this.startTime = 0;
     this.totalTime = 0;
+    this._ygPlaying = false; // факт разметки GameplayAPI.start() (для Яндекс.Игр)
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -819,6 +820,18 @@ class Game {
     // Запрет контекстного меню (правая кнопка мыши / длинный тач) по всей странице
     document.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    // Пауза при сворачивании вкладки (требование Яндекс.Игр): стоп геймплея и музыки.
+    // Вне платформы (window.ysdk отсутствует) — просто тихая пауза звука.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.sound.stopMusic();
+        this._ygStop();
+      } else if (this.state === 'playing') {
+        this.sound.startMusic();
+        this._ygStart();
+      }
+    });
+
     // Меню победы (HTML-кнопки поверх канваса; после смерти — рестарт тапом)
     this.menu = document.getElementById('menu') || null;
     if (this.menu) {
@@ -848,6 +861,7 @@ class Game {
       // Первый тап/пробел — включаем музыку и запускаем бег, без прыжка
       this.sound.startMusic();
       this.state = 'playing';
+      this._ygStart();
       return true;
     }
     if (this.state === 'playing') {
@@ -869,7 +883,28 @@ class Game {
     return px > CONFIG.W - 70 && px < CONFIG.W - 8 && py > 56 && py < 110;
   }
 
-  // Показать/скрыть HTML-меню: при победе — сразу, после смерти — после задержки
+  // ---------- Яндекс.Игры: разметка геймплея (только если SDK инициализирован) ----------
+  _ygAPI() {
+    return (window.ysdk && window.ysdk.features) ? window.ysdk.features : null;
+  }
+  _ygStart() {
+    if (this._ygPlaying) return;
+    this._ygPlaying = true;
+    const f = this._ygAPI();
+    if (f && f.GameplayAPI && f.GameplayAPI.start) {
+      try { f.GameplayAPI.start(); } catch (e) {}
+    }
+  }
+  _ygStop() {
+    if (!this._ygPlaying) return;
+    this._ygPlaying = false;
+    const f = this._ygAPI();
+    if (f && f.GameplayAPI && f.GameplayAPI.stop) {
+      try { f.GameplayAPI.stop(); } catch (e) {}
+    }
+  }
+
+// Показать/скрыть HTML-меню: при победе — сразу, после смерти — после задержки
   // (кнопки «Следующий»/«Выбор уровня»; рестарт — тапом мимо кнопок)
   updateMenu() {
     if (!this.menu) return;
@@ -895,6 +930,7 @@ class Game {
     this.startTime = this.time;
     this.jumpHeld = false;
     this.sound.startMusic();
+    this._ygStart();
     this.updateMenu(); // скрыть меню победы/поражения
   }
 
@@ -955,6 +991,7 @@ class Game {
             this.state = 'won';
             this.player.won = true;
             this.totalTime = this.time - this.startTime;
+            this._ygStop();
             this.sound.win();
             this.spawnParticles(
               this.player.x + this.player.w / 2,
@@ -1010,6 +1047,7 @@ class Game {
     this.deathTimer = 0;
     this.sound.death();
     this.sound.musicCut();
+    this._ygStop();
     this.spawnParticles(
       this.player.x + this.player.w / 2,
       this.player.y + this.player.h / 2,

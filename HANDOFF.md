@@ -94,6 +94,21 @@ f29512e Game over: кнопка «Заново» убрана, рестарт т
   `musicSpeed: 2`, `mel2: [0,0,0,4]` → 8 аккордов / 128 шагов, цикл ~6.3 с: такты 4-6
   повторяют первую фразу, такт 7 — та же фраза, но концовка на квинту.
 
+## Yandex Games SDK (интеграция)
+
+- **Лоадер — в `gm-1.html`** (в `<head>`): асинхронно грузит `https://yandex.ru/games/sdk/v2`,
+  после `YaGames.init()` кладёт `ysdk` в `window.ysdk` и вызывает
+  `ysdk.features.LoadingAPI.ready()`. Вне платформы (локально/GitHub Pages) `YaGames` не
+  загрузится — игра работает без SDK, все вызовы защищены.
+- **`game.js`** — только защищённые вызовы через `window.ysdk` (гварды `_ygAPI/_ygStart/_ygStop`):
+  - `GameplayAPI.start()` — первый тап (`ready→playing`) и `restart()`.
+  - `GameplayAPI.stop()` — смерть (`kill()`) и победа (`won`).
+  - `visibilitychange`: скрытие вкладки → `stopMusic()` + `GameplayAPI.stop()`;
+    возврат (если `playing`) → `startMusic()` + `GameplayAPI.start()`. Требование «звук вне игры».
+- Реклама/лидерборды/сохранения НЕ подключены (вне scope).
+- Тесты не затрагивают лоадер (он в gm-1.html, тесты эвалят только game.js);
+  в `game_input_test.js` `window.ysdk` отсутствует → все `_yg*` — no-op.
+
 ## Уровень 17 — геометрия шипов
 
 - 7 низких платформ `y=560`; под каждой — ряд свисающих шипов

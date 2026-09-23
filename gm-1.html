@@ -74,6 +74,33 @@
     box-shadow: 0 0 22px rgba(255, 224, 102, 0.5);
   }
 </style>
+<script>
+/* Yandex Games SDK — подключаем асинхронно.
+   Внутри Яндекс.Игр инициализирует SDK и сообщает платформе, что игра загружена
+   (ysdk.features.LoadingAPI.ready()). Вне платформы (локально, GitHub Pages)
+   YaGames не появится — игра работает без SDK: все вызовы в game.js защищены
+   через window.ysdk. */
+(function () {
+  function initSDK() {
+    try {
+      if (typeof YaGames === 'undefined' || window.ysdk) return;
+      YaGames.init().then(function (ysdk) {
+        window.ysdk = ysdk;
+        if (ysdk.features && ysdk.features.LoadingAPI && ysdk.features.LoadingAPI.ready) {
+          ysdk.features.LoadingAPI.ready();
+        }
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  if (typeof YaGames !== 'undefined') { initSDK(); return; }
+  var s = document.createElement('script');
+  s.src = 'https://yandex.ru/games/sdk/v2';
+  s.async = true;
+  s.addEventListener('load', initSDK, false);
+  s.addEventListener('error', function () {}, false);
+  document.head.appendChild(s);
+})();
+</script>
 </head>
 <body>
 <div id="wrap">
