@@ -1,7 +1,8 @@
 // Интеграционный тест: управление через Pointer Events, отсутствие double-tap,
 // выбор уровня по параметру запроса (?level=N)
 const fs = require('fs');
-const root = 'C:/git/gm-jump/';
+const path = require('path');
+const root = path.join(__dirname, '..') + '/';
 const levelFiles = fs.readdirSync(root)
   .filter((f) => /^level-\d+\.js$/.test(f))
   .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
