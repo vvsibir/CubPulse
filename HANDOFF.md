@@ -5,7 +5,7 @@
 
 ## Проект
 
-HTML5-клон Geometry Dash, **single-file-free**: нет внешних файлов и ассетов —
+HTML5-клон CubPulse, **single-file-free**: нет внешних файлов и ассетов —
 звук процедурный (Web Audio API), графика рисуется на canvas.
 
 | Файл | Роль |

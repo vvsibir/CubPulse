@@ -1,5 +1,5 @@
 /* =========================================================
-   Геометрия Дэш — общий игровой движок
+   CubPulse — общий игровой движок
    ---------------------------------------------------------
    Уровни регистрируются в window.GM_LEVELS (level-1.js,
    level-2.js, ...). Выбор уровня — параметр запроса в URL:
@@ -1445,4 +1445,4 @@ const LEVEL = window.GM_LEVELS[id] || window.GM_LEVELS['1'];
 const canvas = document.getElementById('game');
 const game = new Game(canvas, LEVEL);
 game.camera.x = -CONFIG.W * CONFIG.CAMERA_X_RATIO;
-if (LEVEL.name) document.title = 'Geometry Dash — ' + LEVEL.name;
+if (LEVEL.name) document.title = 'CubPulse — ' + LEVEL.name;
