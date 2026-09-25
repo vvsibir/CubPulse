@@ -1044,7 +1044,7 @@ class Game {
         if (el) el.addEventListener('click', fn);
       };
       bind('#btn-next', () => this.nextLevel());
-      bind('#btn-select', () => { window.location.href = 'levels.html'; });
+      bind('#btn-select', () => { window.location.href = this._selectPage(); });
       // Тап по экрану меню (мимо кнопок) после смерти — рестарт уровня
       this.menu.addEventListener('pointerdown', (e) => {
         if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
@@ -1116,11 +1116,22 @@ class Game {
     this.menu.classList.toggle('show', show);
   }
 
+  // Параметр mode (?mode=...) пробрасывается в навигацию, чтобы режим
+  // (например, demo) не сбрасывался при переходе между уровнями и в выбор уровней.
+  _modeQs() { // для ссылок вида gm-1.html?level=N — с префиксом '&'
+    const m = new URLSearchParams(window.location.search).get('mode');
+    return m ? '&mode=' + encodeURIComponent(m) : '';
+  }
+  _selectPage() { // для экрана выбора уровней — с префиксом '?'
+    const m = new URLSearchParams(window.location.search).get('mode');
+    return m ? 'levels.html?mode=' + encodeURIComponent(m) : 'levels.html';
+  }
+
   // Переход на следующий уровень; если его нет — на экран выбора уровней
   nextLevel() {
     const next = this.level.id + 1;
     const hasNext = window.GM_LEVELS && window.GM_LEVELS[String(next)];
-    window.location.href = hasNext ? 'gm-1.html?level=' + next : 'levels.html';
+    window.location.href = hasNext ? 'gm-1.html?level=' + next + this._modeQs() : this._selectPage();
   }
 
   restart() {

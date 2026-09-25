@@ -129,6 +129,9 @@
   // Скорость игрока (CONFIG.SPEED) — только для показа «секунд прохождения»
   const SPEED = 480;
 
+  // Режим из URL (?mode=...): пробрасывается в ссылки уровней, чтобы не сбрасываться
+  const MODE = new URLSearchParams(window.location.search).get('mode') || '';
+
   // Имена полных тем на выбор уровней: строковая ссылка level.theme.
   // Зеркало THEMES из game.js — здесь нужны только имена для карточек.
   const THEME_NAMES = { default: 'Классика' };
@@ -147,7 +150,7 @@
 
     const a = document.createElement('a');
     a.className = 'card';
-    a.href = 'gm-1.html?level=' + id;
+    a.href = 'gm-1.html?level=' + id + (MODE ? '&mode=' + encodeURIComponent(MODE) : '');
     a.style.background =
       'linear-gradient(135deg, hsl(' + hue1 + ', 60%, 16%), hsl(' + hue2 + ', 70%, 26%))';
     a.innerHTML =

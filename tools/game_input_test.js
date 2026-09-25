@@ -349,6 +349,35 @@ check('«Следующий» с уровня 3 ведёт на 4, с после
   }
 });
 
+check('mode из запроса не сбрасывается: следующий уровень и выбор уровней сохраняют ?mode=', () => {
+  // Следующий уровень с ?mode=demo: ссылка несёт mode дальше
+  const g = boot('?level=1&mode=demo');
+  g.nextLevel();
+  if (global.window.location.href !== 'gm-1.html?level=2&mode=demo') {
+    throw new Error('next с mode=demo: ' + global.window.location.href);
+  }
+
+  // «Выбор уровня» с ?mode=demo
+  menuBtns['#btn-select'].click();
+  if (global.window.location.href !== 'levels.html?mode=demo') {
+    throw new Error('«Выбор уровня» с mode=demo: ' + global.window.location.href);
+  }
+
+  // Последний уровень (нет следующего) — тоже на выбор уровней с mode
+  const g20 = boot('?level=20&mode=demo');
+  menuBtns['#btn-next'].click();
+  if (global.window.location.href !== 'levels.html?mode=demo') {
+    throw new Error('next с уровня 20 и mode=demo: ' + global.window.location.href);
+  }
+
+  // Произвольный mode (не только demo) тоже пробрасывается
+  const gx = boot('?level=5&mode=foo');
+  gx.nextLevel();
+  if (global.window.location.href !== 'gm-1.html?level=6&mode=foo') {
+    throw new Error('next с mode=foo: ' + global.window.location.href);
+  }
+});
+
 check('каждый уровень подключает свою музыкальную тему (темп/прогрессия)', () => {
   const g1 = boot('?level=1');
   const g2 = boot('?level=2');

@@ -15,7 +15,7 @@ if (levelFiles.length !== 20) throw new Error('ожидалось 20 файло�
 const levelCount = levelFiles.length;
 
 /* --- Мок DOM --- */
-global.window = {}; // level-*.js регистрируются сюда через window.GM_LEVELS
+global.window = { location: { search: '' } }; // level-*.js регистрируются сюда через window.GM_LEVELS
 
 const headScripts = [];
 const frag = { children: [], appendChild(c) { this.children.push(c); } };
@@ -119,6 +119,24 @@ check('карточка показывает тему уровня; у уров�
   if (!c1.innerHTML.includes('тема: Неон-аква')) throw new Error('тема ур.1 не показана: ' + c1.innerHTML);
   if (!c2.innerHTML.includes('тема: Классика')) throw new Error('тема ур.2 (default) не показана: ' + c2.innerHTML);
   if (c4.innerHTML.includes('тема: Неон-аква')) throw new Error('ур.4 не должен носить тему ур.1: ' + c4.innerHTML);
+});
+
+check('?mode= из URL пробрасывается в ссылки карточек (не сбрасывается)', () => {
+  // Повторный прогон страницы с ?mode=demo: проба + render как в реальном браузере
+  global.window.location.search = '?mode=demo';
+  eval(pageScript);
+  for (let i = 0; i < levelCount; i++) {
+    headScripts[headScripts.length - 1].onload();
+  }
+  headScripts[headScripts.length - 1].onerror(); // level-21 не найден -> render()
+  const base = wrap.children.length - levelCount; // смещение к карточкам нового прогона
+  if (base < levelCount) throw new Error('новых карточек нет');
+  for (let i = 0; i < levelCount; i++) {
+    const c = wrap.children[base + i];
+    const expected = 'gm-1.html?level=' + (i + 1) + '&mode=demo';
+    if (c.href !== expected) throw new Error('карточка ' + (i + 1) + ': ' + c.href);
+  }
+  global.window.location.search = '';
 });
 
 process.exit(failures ? 1 : 0);
