@@ -1055,6 +1055,7 @@ class Game {
     }
 
     this.lastTime = performance.now();
+    this._acc = 0; // накопитель реального времени для фиксированного шага демо (1/60)
     requestAnimationFrame((t) => this.loop(t));
   }
 
@@ -1721,7 +1722,24 @@ class Game {
     const dt = Math.min(0.033, (now - this.lastTime) / 1000);
     this.lastTime = now;
 
-    this.update(dt);
+    if (this.demo) {
+      // Демо-режим: фиксированный шаг 1/60 — бот симулирует мир именно с этим
+      // шагом, поэтому при любом реальном fps (60/120/144 Гц или лагах) мир
+      // движется в реальном темпе, а решения бота не разъезжаются с реальностью
+      // (иначе на не-60 Гц демо умирало где-то по уровню — напр. «54%»).
+      this._acc += dt;
+      const STEP = 1 / 60;
+      let steps = 0;
+      while (this._acc >= STEP && steps < 8) {
+        this.update(STEP);
+        this._acc -= STEP;
+        steps++;
+      }
+      if (this._acc >= STEP) this._acc = 0; // после долгого лага не «догоняем» накопленное
+    } else {
+      this.update(dt);
+    }
+
     this.draw();
 
     requestAnimationFrame((t) => this.loop(t));

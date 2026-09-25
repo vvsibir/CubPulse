@@ -378,6 +378,32 @@ check('mode из запроса не сбрасывается: следующи�
   }
 });
 
+check('демо-режим фрейм-независим: level-17 проходит при 30/60/120/144 Гц и переменном такте', () => {
+  // Реальный браузер даёт dt != 1/60 (монитор 120/144 Гц, vsync, лаги) — на
+  // не-60 Гц бот умирал где-то по уровню (у пользователя — «54%»). loop() в
+  // демо использует фиксированный шаг 1/60, поэтому бот видит ровно свою
+  // симуляцию. Проверяем через loop(), а не update().
+  const cases = [
+    ['30fps', 1000 / 30],
+    ['60fps', 1000 / 60],
+    ['120fps', 1000 / 120],
+    ['144fps', 1000 / 144],
+  ];
+  for (const [name, period] of cases) {
+    const g = boot('?level=17&mode=demo');
+    let t = performance.now();
+    const frames = Math.ceil((g.level.length / 480 + 5) * 60); // эквивалент по реальному времени
+    let f = 0;
+    for (; f < frames * 3 && g.state !== 'won'; f++) {
+      t += period;
+      g.loop(t);
+    }
+    if (g.state !== 'won' || g.attempts !== 1) {
+      throw new Error(name + ': ' + g.state + '@x' + g.player.x.toFixed(0) + ' attempts=' + g.attempts);
+    }
+  }
+});
+
 check('каждый уровень подключает свою музыкальную тему (темп/прогрессия)', () => {
   const g1 = boot('?level=1');
   const g2 = boot('?level=2');
