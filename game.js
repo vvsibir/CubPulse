@@ -752,10 +752,208 @@ function hexToRgba(hex, a) {
 }
 
 /* =========================================================
+   ДЕМО-БОТ (mode=demo) — автопрохождение уровня
+   ---------------------------------------------------------
+   Подключается только при ?mode=demo. Пока игрок на поверхности,
+   каждый кадр решает: бежать или прыгнуть (и с какой точки).
+   Решение — СИМУЛЯЦИЕЙ вперёд с той же физикой и коллизиями,
+   что и движок (dt = 1/60 — кадр 60 Гц; порядок: физика ->
+   прижатие к земле -> checkCollision). Стратегия «осторожный
+   игрок»:
+     1) бежим, если в ближайших ~2.4 с нет ничего смертельного
+        (и не нужно взлетать) — иначе смерть впереди;
+     2) для прыжка перебираем точку xj от самой дальней к ближней
+        (шаг 2 px), симулируем дугу до приземления/победы/смерти
+        и берём САМЫЙ поздний безопасный xj;
+     3) на платформах требуем боковой запас и мягкую скорость
+        касания (иначе узкий слой h=20 «проскочит» за кадр).
+   Дуга проверяется реальной коллизией: прыжок, который задевает
+   препятствие корпусом/снизу/сбоку, отбрасывается. Прыжок
+   исполняется в кадр, когда игрок пересекает xj. Решение
+   пересчитывается каждый кадр на поверхности — так компенсируется
+   дрейф реальных кадров относительно симуляции (шаг 2 px ≈ 1/4
+   кадра). Если безопасного выхода нет — демо просто перезапустит
+   уровень (см. демо-цикл в Game.update).
+   ========================================================= */
+class DemoBot {
+  constructor(level) {
+    this.level = level;
+    this.objs = level.objects;
+    this.DT = 1 / 60;
+    this.jumped = false; // текущий прыжок уже исполнен
+    // Мемоизация: decide(x, bottom) — чистая функция (уровень статичен),
+    // результаты кэшируются ключом {x, bottom}.
+    this.memo = new Map();
+  }
+
+  // Состояние-клон для симуляции (checkCollision мутирует y/vy/onGround)
+  _newSt(x, bottomY) {
+    return {
+      x, y: bottomY - CONFIG.PLAYER_SIZE,
+      w: CONFIG.PLAYER_SIZE, h: CONFIG.PLAYER_SIZE,
+      vy: 0, onGround: true, jumped: false,
+      alive: true, won: false, // checkCollision требует эти поля
+    };
+  }
+
+  // Один кадр симуляции — в точности порядок движка:
+  // физика -> прижатие к земле -> коллизии checkCollision.
+  // Возвращает: null (продолжать), {die}, {win},
+  // {land:{ground:true,...}} либо {land:{obj, vy, x}}.
+  _step(st) {
+    const wasAir = !st.onGround;
+    st.x += CONFIG.SPEED * this.DT;
+    st.vy += CONFIG.GRAVITY * this.DT;
+    if (st.vy > CONFIG.MAX_FALL) st.vy = CONFIG.MAX_FALL;
+    st.y += st.vy * this.DT;
+    st.onGround = false;
+    if (st.y + st.h >= CONFIG.GROUND_Y) {
+      st.y = CONFIG.GROUND_Y - st.h;
+      if (st.vy > 0) st.vy = 0;
+      st.onGround = true;
+    }
+    let land = null;
+    for (const o of this.objs) {
+      const vyAt = st.vy; // скорость касания ДО того, как 'land' обнулит её
+      const r = checkCollision(st, o);
+      if (r === 'die') return { die: true, x: st.x };
+      if (r === 'win') return { win: true };
+      if (r === 'land') land = { obj: o, vy: vyAt, x: st.x, bottom: o.y };
+    }
+    if (land) return { land };
+    if (wasAir && st.onGround) {
+      return { land: { ground: true, x: st.x, vy: st.vy, bottom: CONFIG.GROUND_Y } };
+    }
+    return null;
+  }
+
+  // Симуляция до события (смерть/победа/приземление/лимит) — «глубокий бег».
+  // jumpX === null — без прыжка; иначе прыжок в момент пересечения x.
+  // Возврат: { die } | { win } | { land, firedX, firstLand } | { timeout, ... }.
+  //  - firedX: реальный x кадра срабатывания прыжка (null — не сработал:
+  //    упали с края раньше, чем дошли до jumpX) — фильтр «это не прыжок»;
+  //  - firstLand: первое приземление НЕ на стартовую поверхность (десайт),
+  //    в режиме бега приземления пропускаются, чтобы видеть смерть дальше.
+  _simUntil(st, limitMs, jumpX) {
+    // Поверхность, на которой стоим на старте. land-событие с НЕЁ в фазе
+    // «бег без прыжка» — это не событие, а «стоим и продолжаем»: иначе
+    // decide() на вершине блока/платформы на 1-м кадре получал бы {land}
+    // и ошибочно решал «впереди безопасно» (см. ловушку башни level-2).
+    let onTop = null;
+    if (st.onGround) {
+      const btm = st.y + st.h;
+      for (const o of this.objs) {
+        if (st.x + st.w > o.x && st.x < o.x + o.w &&
+            btm >= o.y - 2 && btm <= o.y + 2) { onTop = o; break; }
+      }
+    }
+    let firedX = null;
+    let firstLand = null;
+    let t = 0;
+    while (t < limitMs) {
+      if (st.onGround && !st.jumped) {
+        if (jumpX !== null && st.x >= jumpX) {
+          st.vy = CONFIG.JUMP_VELOCITY;
+          st.onGround = false;
+          st.jumped = true;
+          firedX = st.x;
+        }
+      }
+      const r = this._step(st);
+      if (r) {
+        if (r.land) {
+          // Режим «бег»: приземления не важны — ищем только смерть/победу
+          // в горизонте (иначе спрыгивание с блока на землю «останавливало»
+          // бег, и бот не видел следующий шип за спуском). Но первое
+          // приземление на ДРУГУЮ поверхность запоминаем как десайт: если
+          // бег упрётся в смерть, с него можно продолжить (слепой фолбэк).
+          if (jumpX === null) {
+            if (firstLand === null && r.land.obj !== onTop) {
+              firstLand = { x: r.land.x, bottom: r.land.bottom };
+            }
+            continue;
+          }
+          // Стоим на стартовой поверхности, ещё не прыгнув — не событие.
+          if (r.land.obj === onTop && !st.jumped) continue;
+          return Object.assign(r, { firedX, firstLand });
+        }
+        return Object.assign(r, { firedX, firstLand });
+      }
+      t += this.DT * 1000;
+    }
+    return { timeout: true, firedX, firstLand };
+  }
+
+  // Безопасно ли приземление. Платформы (h=20, слой касания 10 px) — строгий
+  // боковой запас + мягкое касание. Блоки (широкий слой половины высоты) —
+  // достаточно устойчивого касания сверху (любое перекрытие уже валидно).
+  _goodLand(land) {
+    const o = land.obj;
+    if (!o || !o.type) return true; // земля
+    const lx = land.x, rx = land.x + CONFIG.PLAYER_SIZE;
+    if (o.type === 'platform') {
+      if (lx < o.x + 6 || rx > o.x + o.w - 6) return false;
+      return land.vy <= 620;
+    }
+    return land.vy <= 1300;
+  }
+
+  // Главное решение: xj точки прыжка (>= x) — прыгнуть в момент пересечения;
+  // -1 — бежать дальше (в горизонте нет угрозы); -2 — впереди препятствие,
+  // но безопасного прыжка нет (тупик; демо перезапустит уровень).
+  // Приземление принимается, только если с него можно ПРОДОЛЖИТЬ (бежать или
+  // снова прыгнуть) — рекурсивный взгляд вперёд на 1 приземление. Так
+  // отбрасываются прыжки, чья посадка упирается в стену/платформу, куда
+  // выйти нельзя (иначе гибель гарантирована).
+  decide(x, bottomY, depth = 0) {
+    // Страж глубины НЕ кэшируется: он зависит от глубины вызова, а не от
+    // свойств клетки — иначе отказ «на глубине» отравил бы мемо значениями
+    // -2 для проходимых клеток (определение ошибается уже в 1 кадре).
+    if (depth > 200) return -2;
+    const key = (Math.floor(x / 2) * 2) + ':' + bottomY;
+    const cached = this.memo.get(key);
+    if (cached !== undefined) return cached;
+    const res = this._decide(x, bottomY, depth);
+    this.memo.set(key, res);
+    return res;
+  }
+
+  // Внутренняя реализация decide
+  _decide(x, bottomY, depth) {
+    // 1) Посмотрим «бежать»: если в горизонте нет смерти — бежим.
+    const run = this._simUntil(this._newSt(x, bottomY), 2400, null);
+    if (!run.die) return -1;
+    // 2) Бег смертелен в точке run.x. Прыжок обязан начаться ДО неё
+    //    (часто — за 250-330 px, чтобы успеть взлететь над препятствием/
+    //    платформой). Перебираем xj от самой дальней дуги к ближней.
+    const cap = Math.min(x + 344, run.x - 1);
+    for (let xj = cap; xj >= x - 1; xj -= 2) {
+      const arc = this._simUntil(this._newSt(x, bottomY), 1400, xj);
+      if (arc.win) return xj;
+      // Дуга, в которой прыжок так и не сработал (уже свалились с края до xj) —
+      // это не прыжок, а падение; как кандидат не рассматривается.
+      if (arc.firedX === null) continue;
+      if (!arc.land || !this._goodLand(arc.land)) continue;
+      // Приземление корректно само по себе — надо, чтобы с него можно было
+      // продолжить. Рекурсия: та же decide() с позиции приземления.
+      if (this.decide(arc.land.x, arc.land.bottom, depth + 1) !== -2) return xj;
+    }
+    // 3) Прямого прыжка нет, но бег может «спустить» нас на нижнюю поверхность:
+    //    бежим и перерешаем уже на ней. Десайт — НЕ коммит (в отличие от
+    //    прыжка): бот решает заново на каждом кадре приземления, поэтому
+    //    глубокая проверка приземления не нужна — валидация здесь как раз
+    //    ломала каскады башен/платформ level-17 («длинный бег видит смерть
+    //    за спуском и ошибочно объявляет тупик»).
+    if (run.firstLand) return -1;
+    return -2; // безопасного прыжка нет — тупик
+  }
+}
+
+/* =========================================================
    ИГРА
    ========================================================= */
 class Game {
-  constructor(canvas, level) {
+  constructor(canvas, level, demo) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.level = level;
@@ -771,6 +969,11 @@ class Game {
     this.startTime = 0;
     this.totalTime = 0;
     this._ygPlaying = false; // факт разметки GameplayAPI.start() (для Яндекс.Игр)
+
+    // Демо-режим (?mode=demo): автопрохождение уровня ботом
+    this.demo = !!demo;
+    this.demoBot = this.demo ? new DemoBot(level) : null;
+    this.wonAt = 0;
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -803,6 +1006,7 @@ class Game {
     canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.sound.unlock();
+      if (this.demo) return; // демо-режим: управление у бота
       if (!e.isPrimary) return; // игнорируем второй палец
       try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
       if (this._hitVolume(e)) { this.sound.toggleMute(); return; }
@@ -907,7 +1111,7 @@ class Game {
 // Показать/скрыть HTML-меню: при победе — сразу, после смерти — после задержки
   // (кнопки «Следующий»/«Выбор уровня»; рестарт — тапом мимо кнопок)
   updateMenu() {
-    if (!this.menu) return;
+    if (this.demo || !this.menu) return; // демо-режим: меню не показываем (авто-цикл)
     const show = this.state === 'won' || (this.state === 'dead' && this.deathTimer > 0.3);
     this.menu.classList.toggle('show', show);
   }
@@ -963,9 +1167,31 @@ class Game {
     }
   }
 
+  // Демо-бот: управление прыжками в mode=demo (вызывается каждый кадр
+  // во время игры; прыжок исполняется в тот же кадр через jumpHeld)
+  demoTick() {
+    const p = this.player;
+    if (!p.onGround) { this.jumpHeld = false; return; }
+    if (this.demoBot.jumped) this.demoBot.jumped = false; // приземлились — решаем заново
+    const d = this.demoBot.decide(p.x, p.y + p.h);
+    if (d >= 0 && p.x >= d) {
+      this.jumpHeld = true;
+      this.demoBot.jumped = true;
+    } else {
+      this.jumpHeld = false;
+    }
+  }
+
   update(dt) {
     this.time += dt;
     this.bgOffset += CONFIG.SPEED * dt;
+
+    // Демо-режим: стартуем сразу, без первого тапа (музыка — с первого кадра)
+    if (this.demo && this.state === 'ready') {
+      this.state = 'playing';
+      this.sound.startMusic();
+      this._ygStart();
+    }
 
     if (this.state === 'playing') {
         const wasOnGround = this.player.onGround;
@@ -991,6 +1217,7 @@ class Game {
             this.state = 'won';
             this.player.won = true;
             this.totalTime = this.time - this.startTime;
+            this.wonAt = this.time;
             this._ygStop();
             this.sound.win();
             this.spawnParticles(
@@ -1001,6 +1228,10 @@ class Game {
             break;
           }
         }
+
+        // 4б. Демо-режим: управление прыжками (до автопрыжка, чтобы прыжок
+        //     сработал в этом же кадре)
+        if (this.demo && this.state === 'playing') this.demoTick();
 
         // 5. Автопрыжок при удержании
         if (this.state === 'playing') {
@@ -1027,6 +1258,13 @@ class Game {
         this.camera.update(this.player);
       } else if (this.state === 'dead') {
       this.deathTimer += dt;
+    }
+
+    // Демо-режим: зацикливаемся — после смерти рестарт, после победы короткая
+    // пауза для салюта и снова рестарт
+    if (this.demo) {
+      if (this.state === 'dead' && this.deathTimer > 0.45) this.restart();
+      else if (this.state === 'won' && this.time - this.wonAt > 1.8) this.restart();
     }
 
     // Меню победы/поражения (обновляем видимость по состоянию)
@@ -1306,6 +1544,12 @@ class Game {
     ctx.fillText(`Попытка: ${this.attempts}`, 24, 40);
     ctx.fillText(this.level.name || '', 24, 68);
 
+    if (this.demo) {
+      ctx.fillStyle = 'rgba(255, 210, 90, 0.95)';
+      ctx.fillText('ДЕМО — автопрохождение', 24, 96);
+      ctx.fillStyle = '#fff';
+    }
+
     // Прогресс: при победе показываем жёстко 100%, иначе реальный % по позиции
     // (финиш стоит на length - 400, поэтому до победы он не успевает дойти до 100)
     const progress = this.state === 'won'
@@ -1481,6 +1725,6 @@ const id = (new URLSearchParams(window.location.search).get('level') || '1');
 const LEVEL = window.GM_LEVELS[id] || window.GM_LEVELS['1'];
 
 const canvas = document.getElementById('game');
-const game = new Game(canvas, LEVEL);
+const game = new Game(canvas, LEVEL, (new URLSearchParams(window.location.search).get('mode') || '') === 'demo');
 game.camera.x = -CONFIG.W * CONFIG.CAMERA_X_RATIO;
 if (LEVEL.name) document.title = 'CubPulse — ' + LEVEL.name;

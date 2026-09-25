@@ -179,7 +179,235 @@ function build(id) {
     }
     // стабильная сортировка по x, чтобы порядок в файле соответствовал правилу генератора
     objs.sort((a, b) => a.x - b.x);
+
+    // Исправление барьера: коридор запуска на вход лестницы (блок-вход 560)
+    // не должен быть накрыт кластером шипов. Коридор запуска на верх b с земли:
+    // xf ∈ [b.x-318, b.x-177] (посадка на верх при +257..278 px, игрок 40 px).
+    // Если свободного участка < 40 px — вход недостижим, шипы накрывающие
+    // коридор убираем (проверено BFS: зона 11529..13000 была единственным
+    // непроходимым участком level-17, причина — кластер 12299..12439).
+    const blocks = objs.filter((o) => o.type === 'block' && o.y + o.h >= 639);
+    const spikes = objs.filter((o) => o.type === 'spike' && !o.flip);
+    for (const b of blocks) {
+      if (b.y > 560) continue; // вход лестницы всегда 560; ступени выше не стартуют с земли
+      const isTowerEntry = blocks.some((o) => o !== b && o.x > b.x && o.x - (b.x + b.w) <= 260 && o.y < b.y);
+      if (!isTowerEntry) continue;
+      const L0 = b.x - 318, L1 = b.x - 177;
+      const cover = (x) => spikes.some((s) => s.x < b.x && x + 40 > s.x + 10 && x < s.x + 30);
+      let free = 0;
+      for (let x = L0; x <= L1; x += 4) if (!cover(x)) free += 4;
+      if (free >= 40) continue;
+      const toRemove = spikes.filter((s) => s.x < b.x && s.x + 30 > L0 && s.x - 30 < L1);
+      for (const s of toRemove) {
+        const i = objs.indexOf(s);
+        if (i >= 0) objs.splice(i, 1);
+      }
+      console.log('  ремонт level-' + id + ': убран кластер шипов из коридора запуска блока x=' + b.x + ' y=' + b.y);
+    }
   }
+
+  // ------------------------------------------------
+  // Ремонт непроходимых коридоров (уровни 5, 7, 9, 11, 13, 16, 19).
+  // Общий принцип (тот же, что и в level-17): ряд шипов, стоящий в кармане
+  // приземления или в коридоре запуска предыдущего препятствия, разрывает
+  // цепочку прыжков демо-бота. Единственный честный оракул проходимости —
+  // полный прогон бота по уровню (BFS-зонд ненадёжен), поэтому каждое правило
+  // проверено прогоном: после ремонта бот проходит уровень с первой попытки.
+  const gsp = () => objs.filter((o) => o.type === 'spike' && !o.flip).sort((a, b) => a.x - b.x);
+  const srows = (list) => { // соседние шипы (зазор <= 2 px) — одна «линия»
+    const out = [];
+    for (const s of list) {
+      const last = out.length ? out[out.length - 1] : null;
+      if (last && s.x - (last[last.length - 1].x + 40) <= 2) last.push(s);
+      else out.push([s]);
+    }
+    return out;
+  };
+  const zS = (g) => g[0].x - 30;              // начало зоны смерти линии (игрок 40 px, hitbox шипа +10..+30)
+  const zE = (g) => g[g.length - 1].x + 30;   // конец зоны смерти линии
+  const rm = (s, why) => {
+    const i = objs.indexOf(s);
+    if (i >= 0) { objs.splice(i, 1); console.log('  ремонт level-' + id + ': ' + why); }
+  };
+
+  if (id === 5) {
+    // «Одиночный шип в кармане приземления пары». Ряд 1057 стоит в кармане
+    // (836..1027) после пары 766/806; цепочка 1057→1303→1550/1590 даёт карманы
+    // 191/186/187 px — демо-бот не находит продолжения с первой попытки и падает
+    // уже на первой паре 491/531 (проверено прогоном). Убираем одиночный 1057.
+    const rr = srows(gsp());
+    for (let i = 1; i < rr.length - 1; i++) {
+      if (rr[i].length !== 1) continue;                  // только одиночный ряд
+      const gL = zS(rr[i]) - zE(rr[i - 1]);
+      const gR = zS(rr[i + 1]) - zE(rr[i]);
+      if (gL <= 200 && gR <= 200) {
+        rm(rr[i][0], 'убран одиночный шип x=' + rr[i][0].x + ', зажатый между зонами (карманы ' + gL + '/' + gR + ' px)');
+        break;
+      }
+    }
+  }
+
+  if (id === 7) {
+    // «Первый член тройки на выходе из флип-коридора». После коридора 1943..2143
+    // и пары-выхода 2119/2159 тройка 2359/2399/2439 стоит в кармане 140 px —
+    // коридор-выход не проходится ботом. Узор после второго коридора (5222)
+    // терпимее (зазор 227 px) — правило срабатывает только в первом случае.
+    const ceil = objs.filter((o) => o.type === 'block' && o.y === 440 && o.w === 200);
+    for (const c of ceil) {
+      const rr = srows(gsp());
+      const pair = rr.find((g) => zS(g) >= c.x && zS(g) < c.x + c.w + 120);
+      if (!pair || pair.length !== 2) continue;
+      const idx = rr.indexOf(pair);
+      const nxt = rr[idx + 1];
+      if (!nxt) continue;
+      const gap = zS(nxt) - zE(pair);
+      if (gap <= 160) rm(nxt[0], 'убран первый член ряда x=' + nxt[0].x + ' в кармане ' + gap + ' px после пары-выхода из флип-коридора x=' + c.x);
+    }
+  }
+
+  if (id === 9) {
+    // «Одиночный шип после хвоста кластера». Хвост кластера — одиночный 3645
+    // в кармане 39 px после пары 3506/3546 (весь кластер 3506/3546+3645).
+    // Прыжок с блока 3256 приземляется у 3760, а одиночный 3900 в кармане
+    // 195 px после кластера не оставляет продолжения. Убираем 3900.
+    const rr = srows(gsp());
+    for (let i = 2; i < rr.length; i++) {
+      const g = rr[i], p = rr[i - 1];
+      if (g.length !== 1 || p.length !== 1) continue;    // одиночный после одиночного хвоста
+      const gap = zS(g) - zE(p);
+      if (gap < 150 || gap > 220) continue;
+      if (zS(p) - zE(rr[i - 2]) <= 60) {                 // хвост вплотную к своей линии
+        rm(g[0], 'убран одиночный шип x=' + g[0].x + ' в кармане ' + gap + ' px после хвоста кластера (x=' + p[0].x + ')');
+        break;
+      }
+    }
+  }
+
+  if (id === 11) {
+    // «Одиночный шип в кармане тройки». Тройка 9467/9507/9547, одиночный 9703
+    // в кармане 96 px, далее коридор 9972..10372 со своим наземным шипом 9972.
+    // Убираем одиночный 9703 — карман до коридора раскрывается до ~230 px.
+    const rr = srows(gsp());
+    for (let i = 1; i < rr.length; i++) {
+      const g = rr[i], p = rr[i - 1];
+      if (g.length !== 1 || p.length < 3) continue;      // одиночный после тройки
+      const gap = zS(g) - zE(p);
+      if (gap <= 110) {
+        rm(g[0], 'убран одиночный шип x=' + g[0].x + ' в кармане ' + gap + ' px после тройки');
+        break;
+      }
+    }
+  }
+
+  if (id === 13) {
+    // Уровень 13 — четыре разрыва коридора:
+    // (a) старт: тройка 691/731/771 → пара 927/967 в кармане 96 px (непроходимо
+    //     — из старта нельзя ни продолжать после тройки, ни перепрыгнуть обе
+    //     линии одним прыжком); убираем первый член пары 927.
+    // (b) после лестницы 1224/1404/1584 одиночный 1966 в 272 px от её конца —
+    //     посадка со спуска приходится в зону шипа; убираем.
+    // (c) цепочка одиночных 5761/5891/6137/6373 (зазоры 70/186/176 px) —
+    //     средний 6137 убираем: после пары 5761+5891 открывается широкий
+    //     карман (422 px) перед 6373.
+    // (d) тройка 8079/8119/8159 в 220 px после лестницы 7389..7829 — убираем
+    //     последний член, чтобы не зажимать выход с лестницы.
+    const bl = objs.filter((o) => o.type === 'block' && o.y + o.h >= 639).sort((a, b) => a.x - b.x);
+    const stairs = []; // группы ступеней (соседние блоки <= 260 px) — конец группы = конец лестницы
+    for (const b of bl) {
+      const last = stairs.length ? stairs[stairs.length - 1] : null;
+      if (last && b.x - (last[last.length - 1].x + last[last.length - 1].w) <= 260) last.push(b);
+      else stairs.push([b]);
+    }
+    const stairEnd = (st) => st[st.length - 1].x + st[st.length - 1].w;
+    // (a)
+    let rr = srows(gsp());
+    for (let i = 1; i < rr.length; i++) {
+      if (rr[i - 1].length !== 3) continue;
+      const gap = zS(rr[i]) - zE(rr[i - 1]);
+      if (gap >= 60 && gap <= 120) { rm(rr[i][0], 'убран первый член пары x=' + rr[i][0].x + ' в кармане ' + gap + ' px после тройки'); break; }
+    }
+    // (b)
+    rr = srows(gsp());
+    for (const st of stairs) {
+      if (st.length < 2) continue;
+      const end = stairEnd(st);
+      const g = rr.find((r) => zS(r) > end);
+      if (!g || g.length !== 1) continue;
+      const dist = zS(g) - end;
+      if (dist >= 200 && dist <= 320) { rm(g[0], 'убран одиночный шип x=' + g[0].x + ' в ' + dist + ' px после лестницы'); break; }
+    }
+    // (c)
+    rr = srows(gsp());
+    for (let i = 0; i < rr.length; i++) {
+      let j = i;
+      while (j < rr.length && rr[j].length === 1 && (j === i || zS(rr[j]) - zE(rr[j - 1]) < 210)) j++;
+      if (j - i >= 3) {
+        const mid = rr[Math.floor((i + j - 1) / 2)];
+        rm(mid[0], 'убран средний шип x=' + mid[0].x + ' цепочки из ' + (j - i) + ' одиночных рядов');
+        break;
+      }
+    }
+    // (d)
+    rr = srows(gsp());
+    for (const st of stairs) {
+      if (st.length < 2) continue;
+      const end = stairEnd(st);
+      const g = rr.find((r) => zS(r) > end);
+      if (!g || g.length !== 3) continue;
+      const dist = zS(g) - end;
+      if (dist >= 200 && dist <= 280) { rm(g[2], 'убран последний член тройки x=' + g[2].x + ' в ' + dist + ' px после лестницы'); break; }
+    }
+  }
+
+  if (id === 16) {
+    // «Тройка, зажатая между блоком и лестницей». Блок 13724 → тройка
+    // 13974/14014/14054 в 140 px, за ней лестница 14264..14624. Окно запуска
+    // с блока сужается до ~28 px (зона тройки 13944 начинается вплотную).
+    // Убираем первый член тройки — окно становится ~208 px. Первая тройка
+    // (13434..) не подходит: за её блоком (13724) идёт плоский блок, а не
+    // лестница — правило её не трогает.
+    const bl = objs.filter((o) => o.type === 'block' && o.y + o.h >= 639).sort((a, b) => a.x - b.x);
+    const rr = srows(gsp());
+    for (let i = 0; i < rr.length; i++) {
+      const g = rr[i];
+      if (g.length !== 3) continue;                      // тройка
+      const prevBlk = [...bl].reverse().find((b) => b.x + b.w < zS(g));
+      if (!prevBlk) continue;
+      const distL = zS(g) - (prevBlk.x + prevBlk.w);
+      if (distL < 100 || distL > 200) continue;
+      const nextBlk = bl.find((b) => b.x >= zE(g) && b.x > prevBlk.x);
+      if (!nextBlk) continue;
+      const after = bl.find((b) => b.x > nextBlk.x + nextBlk.w - 1 && b.x - (nextBlk.x + nextBlk.w) <= 260);
+      if (!after || after.y >= nextBlk.y) continue;      // за блоком — ещё более высокий (лестница)
+      rm(g[0], 'убран первый член тройки x=' + g[0].x + ' в ' + distL + ' px после блока x=' + prevBlk.x + ' перед лестницей x=' + nextBlk.x);
+      break;
+    }
+  }
+
+  if (id === 19) {
+    // «Пара шипов между блоком и лестницей». Пара 1842/1882 в 140 px после
+    // блока 1592, за ней лестница 2132/2312/2492 — бот, выходя с блока, не
+    // успевает перепрыгнуть пару и уходит в зону 1812..1912. Убираем первый
+    // член пары. Пара 15130/15170 (после блока 14880) не трогается: за её
+    // блоком 15420 нет лестницы.
+    const bl = objs.filter((o) => o.type === 'block' && o.y + o.h >= 639).sort((a, b) => a.x - b.x);
+    const rr = srows(gsp());
+    for (let i = 0; i < rr.length; i++) {
+      const g = rr[i];
+      if (g.length !== 2) continue;                      // пара
+      const prevBlk = [...bl].reverse().find((b) => b.x + b.w < zS(g));
+      if (!prevBlk) continue;
+      const distL = zS(g) - (prevBlk.x + prevBlk.w);
+      if (distL < 100 || distL > 200) continue;
+      const nextBlk = bl.find((b) => b.x >= zE(g) && b.x > prevBlk.x);
+      if (!nextBlk) continue;
+      const after = bl.find((b) => b.x > nextBlk.x + nextBlk.w - 1 && b.x - (nextBlk.x + nextBlk.w) <= 260);
+      if (!after || after.y >= nextBlk.y) continue;      // за блоком — ещё более высокий (лестница)
+      rm(g[0], 'убран первый член пары x=' + g[0].x + ' в ' + distL + ' px после блока x=' + prevBlk.x + ' перед лестницей x=' + nextBlk.x);
+      break;
+    }
+  }
+
   return { length, objs };
 }
 

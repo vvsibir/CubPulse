@@ -45,7 +45,6 @@
     { type: 'spike', x: 1335, y: 400, w: 40, h: 40, flip: true },
     { type: 'spike', x: 1385, y: 400, w: 40, h: 40, flip: true },
     { type: 'block', x: 1592, y: 560, w: 80, h: 80 },
-    { type: 'spike', x: 1842, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 1882, y: 600, w: 40, h: 40 },
     { type: 'block', x: 2132, y: 560, w: 80, h: 80 },
     { type: 'block', x: 2312, y: 480, w: 80, h: 160 },

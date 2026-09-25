@@ -444,4 +444,22 @@ check('рисование игрока и финиша использует цв
   if (g1._theme().c.ground === g3._theme().c.ground) throw new Error('цвета земли ур.1 и ур.3 совпадают');
 });
 
+check('демо-бот: все уровни 1-20 проходятся с первой попытки (mode=demo)', () => {
+  // Единственный честный оракул проходимости — реальный бот (BFS-зонд ненадёжен).
+  // Уровни 5, 7, 9, 11, 13, 16, 19 отремонтированы в tools/gen_levels.js по правилам
+  // «шип в коридоре запуска / кармане приземления» (см. ремонт-блоки в билде).
+  const ids = [1, 2, 3].concat(levelFiles.map((f) => parseInt(f.match(/\d+/)[0])).sort((a, b) => a - b));
+  const bad = [];
+  for (const id of ids) {
+    const g = boot('?level=' + id + '&mode=demo');
+    const frames = Math.ceil((g.level.length / 480 + 5) * 60);
+    let f = 0;
+    for (; f < frames && g.state !== 'won' && g.state !== 'dead'; f++) g.update(1 / 60);
+    if (g.state !== 'won' || g.attempts !== 1) {
+      bad.push('level-' + id + ' ' + g.state + '@x' + g.player.x.toFixed(0) + ' attempts=' + g.attempts);
+    }
+  }
+  if (bad.length) throw new Error('не пройдены: ' + bad.join('; '));
+});
+
 process.exit(failures ? 1 : 0);

@@ -39,12 +39,12 @@
     { type: 'spike', x: 691, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 731, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 771, y: 600, w: 40, h: 40 },
-    { type: 'spike', x: 927, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 967, y: 600, w: 40, h: 40 },
     { type: 'block', x: 1224, y: 560, w: 80, h: 80 },
     { type: 'block', x: 1404, y: 480, w: 80, h: 160 },
     { type: 'block', x: 1584, y: 560, w: 80, h: 80 },
-    { type: 'spike', x: 1966, y: 600, w: 40, h: 40 },
+
+      // ---------- следующий этап ----------
     { type: 'block', x: 2240, y: 560, w: 80, h: 80 },
     { type: 'block', x: 2420, y: 480, w: 80, h: 160 },
     { type: 'block', x: 2600, y: 560, w: 80, h: 80 },
@@ -64,7 +64,6 @@
 
       // ---------- следующий этап ----------
     { type: 'spike', x: 5761, y: 600, w: 40, h: 40 },
-    { type: 'spike', x: 5891, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 6137, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 6373, y: 600, w: 40, h: 40 },
     { type: 'block', x: 6697, y: 560, w: 80, h: 80 },
@@ -75,7 +74,6 @@
     { type: 'block', x: 7749, y: 560, w: 80, h: 80 },
     { type: 'spike', x: 8079, y: 600, w: 40, h: 40 },
     { type: 'spike', x: 8119, y: 600, w: 40, h: 40 },
-    { type: 'spike', x: 8159, y: 600, w: 40, h: 40 },
     { type: 'block', x: 8395, y: 560, w: 80, h: 80 },
     { type: 'block', x: 8575, y: 480, w: 80, h: 160 },
     { type: 'block', x: 8755, y: 560, w: 80, h: 80 },
