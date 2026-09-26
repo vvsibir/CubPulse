@@ -6,3 +6,6 @@ Thumbs.db
 Desktop.ini
 .vscode/
 .idea/
+
+# Релизная сборка (генерируется tools/release.js)
+Release/
