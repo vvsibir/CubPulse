@@ -975,6 +975,10 @@ class Game {
     this.demoBot = this.demo ? new DemoBot(level) : null;
     this.wonAt = 0;
 
+    // Реклама Яндекс.Игр: на каждую 5-ю смерть — полноэкранный interstitial
+    this._deaths = 0;      // счётчик смертей за сессию (страницу уровня)
+    this._adShowing = false; // идёт реклама — рестарт/ввод заблокированы
+
     this.resize();
     window.addEventListener('resize', () => this.resize());
     this.sound = new Sound();
@@ -1061,6 +1065,7 @@ class Game {
 
   // Обработка начала нажатия. Возвращает true, если это был стартовый тап (музыка + бег, без прыжка).
   onPressStart() {
+    if (this._adShowing) return false; // во время рекламы ввод игнорируем
     this.sound.unlock();
     if (this.state === 'ready') {
       // Первый тап/пробел — включаем музыку и запускаем бег, без прыжка
@@ -1109,6 +1114,31 @@ class Game {
     }
   }
 
+  // Полноэкранная реклама Яндекс.Игр на каждую 5-ю смерть. Перед показом
+  // геймплей уже остановлен (kill() сделал _ygStop()), после закрытия —
+  // возобновится при рестарте (_ygStart()). Вне платформы — тихо ничего.
+  _ygShowAd() {
+    if (this._adShowing || this.demo) return;
+    const f = this._ygAPI();
+    const adv = f && f.Adv;
+    if (!adv || !adv.showFullscreenAdv) return; // нет SDK — без рекламы
+    this._adShowing = true;
+    try {
+      adv.showFullscreenAdv({
+        callbacks: {
+          onClose: () => this._ygAdClosed(),
+          onError: () => this._ygAdClosed(),
+          onOffline: () => this._ygAdClosed(),
+        },
+      });
+    } catch (e) {
+      this._ygAdClosed(); // SDK сломался — не блокируем игру
+    }
+  }
+  _ygAdClosed() {
+    this._adShowing = false;
+  }
+
 // Показать/скрыть HTML-меню: при победе — сразу, после смерти — после задержки
   // (кнопки «Следующий»/«Выбор уровня»; рестарт — тапом мимо кнопок)
   updateMenu() {
@@ -1136,6 +1166,7 @@ class Game {
   }
 
   restart() {
+    if (this._adShowing) return; // во время рекламы рестарт запрещён
     this.player.reset();
     this.camera.x = -CONFIG.W * CONFIG.CAMERA_X_RATIO;
     this.camera.y = 0;
@@ -1308,6 +1339,10 @@ class Game {
       this.player.y + this.player.h / 2,
       20, c.finishA, 300
     );
+
+    // Каждая 5-я смерть — реклама (в демо-режиме не показываем: авто-цикл бота)
+    this._deaths++;
+    if (!this.demo && this._deaths % 5 === 0) this._ygShowAd();
   }
 
   /* ---------- ОТРИСОВКА ---------- */

@@ -404,6 +404,63 @@ check('демо-режим фрейм-независим: level-17 проход�
   }
 });
 
+check('реклама Яндекс: показ на каждую 5-ю смерть, без рестарта во время показа, не в демо', () => {
+  const prev = global.window.ysdk;
+  const calls = [];
+  let gameplayStart = 0;
+  let gameplayStop = 0;
+  global.window.ysdk = {
+    features: {
+      GameplayAPI: { start() { gameplayStart++; }, stop() { gameplayStop++; } },
+      Adv: { showFullscreenAdv(o) { calls.push(o); } },
+    },
+  };
+  try {
+    const g = boot('?level=1');
+    g._ygStart(); // реальный поток: игрок стартанул (первый тап) — геймплей размечен
+    // Смерти 1-4 — без рекламы
+    for (let i = 1; i <= 4; i++) {
+      g.state = 'playing';
+      g.kill();
+      if (g._adShowing || calls.length !== 0) throw new Error('реклама на смерти ' + i);
+      if (g._deaths !== i) throw new Error('счётчик смертей: ' + g._deaths);
+    }
+    // 5-я смерть — интерстишн и блокировка рестарта
+    g.state = 'playing';
+    g.kill();
+    if (calls.length !== 1 || !g._adShowing) throw new Error('5-я смерть: показов=' + calls.length + ' adShowing=' + g._adShowing);
+    if (gameplayStop < 1) throw new Error('геймплей не остановлен перед рекламой (_ygStop)');
+    g.state = 'dead';
+    g.restart();
+    if (g.state === 'playing') throw new Error('рестарт не заблокирован во время рекламы');
+    // Закрытие рекламы разблокирует рестарт
+    const onClose = calls[0].callbacks.onClose;
+    if (typeof onClose !== 'function') throw new Error('нет onClose в опциях рекламы');
+    onClose(true, 'closed');
+    if (g._adShowing) throw new Error('onClose не сбросил _adShowing');
+    g.restart();
+    if (g.state !== 'playing') throw new Error('рестарт после закрытия рекламы не работает');
+    // 10-я смерть — вторая реклама (5, 10, 15...)
+    for (let i = 6; i <= 10; i++) {
+      g.state = 'playing';
+      g.kill();
+    }
+    if (calls.length !== 2 || !g._adShowing) throw new Error('10-я смерть: показов=' + calls.length);
+    calls[0].callbacks.onError(new Error('adv'));
+    if (g._adShowing) throw new Error('onError не сбросил _adShowing');
+    // Демо-режим: рекламу не показываем даже на 5-й смерти
+    const gd = boot('?level=1&mode=demo');
+    for (let i = 1; i <= 5; i++) {
+      gd.state = 'playing';
+      gd.kill();
+    }
+    if (calls.length !== 2 || gd._adShowing) throw new Error('демо показало рекламу: показов=' + calls.length);
+  } finally {
+    if (prev === undefined) delete global.window.ysdk;
+    else global.window.ysdk = prev;
+  }
+});
+
 check('каждый уровень подключает свою музыкальную тему (темп/прогрессия)', () => {
   const g1 = boot('?level=1');
   const g2 = boot('?level=2');
