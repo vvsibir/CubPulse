@@ -1158,11 +1158,18 @@ class Game {
     return m ? 'levels.html?mode=' + encodeURIComponent(m) : 'levels.html';
   }
 
-  // Переход на следующий уровень; если его нет — на экран выбора уровней
+  // Переход на следующий уровень. Если следующего нет: в демо-режиме — снова
+  // на первый (авто-цикл 1..20 → 1), иначе — на экран выбора уровней
   nextLevel() {
     const next = this.level.id + 1;
     const hasNext = window.GM_LEVELS && window.GM_LEVELS[String(next)];
-    window.location.href = hasNext ? 'gm-1.html?level=' + next + this._modeQs() : this._selectPage();
+    if (hasNext) {
+      window.location.href = 'gm-1.html?level=' + next + this._modeQs();
+    } else if (this.demo) {
+      window.location.href = 'gm-1.html?level=1' + this._modeQs(); // после 20-го — первый
+    } else {
+      window.location.href = this._selectPage();
+    }
   }
 
   restart() {
@@ -1304,10 +1311,10 @@ class Game {
     }
 
     // Демо-режим: зацикливаемся — после смерти рестарт, после победы короткая
-    // пауза для салюта и снова рестарт
+    // пауза для салюта и переход на следующий уровень (после 20-го — на первый)
     if (this.demo) {
       if (this.state === 'dead' && this.deathTimer > 0.45) this.restart();
-      else if (this.state === 'won' && this.time - this.wonAt > 1.8) this.restart();
+      else if (this.state === 'won' && this.time - this.wonAt > 1.8) this.nextLevel();
     }
 
     // Меню победы/поражения (обновляем видимость по состоянию)

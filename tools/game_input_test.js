@@ -363,10 +363,10 @@ check('mode из запроса не сбрасывается: следующи�
     throw new Error('«Выбор уровня» с mode=demo: ' + global.window.location.href);
   }
 
-  // Последний уровень (нет следующего) — тоже на выбор уровней с mode
+  // Последний уровень (нет следующего): в демо-режиме замыкаем на первый
   const g20 = boot('?level=20&mode=demo');
   menuBtns['#btn-next'].click();
-  if (global.window.location.href !== 'levels.html?mode=demo') {
+  if (global.window.location.href !== 'gm-1.html?level=1&mode=demo') {
     throw new Error('next с уровня 20 и mode=demo: ' + global.window.location.href);
   }
 
@@ -375,6 +375,26 @@ check('mode из запроса не сбрасывается: следующи�
   gx.nextLevel();
   if (global.window.location.href !== 'gm-1.html?level=6&mode=foo') {
     throw new Error('next с mode=foo: ' + global.window.location.href);
+  }
+});
+
+check('демо-режим: после победы — переход на следующий уровень, после 20-го — на первый', () => {
+  // Победа на уровне 1 в демо: короткая пауза для салюта (1.8 с) → nextLevel → уровень 2
+  const g1 = boot('?level=1&mode=demo');
+  g1.state = 'won';
+  g1.wonAt = g1.time - 3; // «пауза» уже прошла
+  g1.update(1 / 60);
+  if (global.window.location.href !== 'gm-1.html?level=2&mode=demo') {
+    throw new Error('демо: победа на 1 не ведёт на 2: ' + global.window.location.href);
+  }
+
+  // Победа на последнем (20) в демо: зацикливаемся на первый
+  const g20 = boot('?level=20&mode=demo');
+  g20.state = 'won';
+  g20.wonAt = g20.time - 3;
+  g20.update(1 / 60);
+  if (global.window.location.href !== 'gm-1.html?level=1&mode=demo') {
+    throw new Error('демо: победа на 20 не ведёт на 1: ' + global.window.location.href);
   }
 });
 
