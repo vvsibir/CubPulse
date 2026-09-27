@@ -1056,6 +1056,7 @@ class Game {
           this.onPressStart();
         }
       });
+      this.resize(); // первый resize() шёл до создания this.menu — применяем масштаб меню сейчас
     }
 
     this.lastTime = performance.now();
@@ -1200,6 +1201,13 @@ class Game {
     }
     this.canvas.style.width = w + 'px';
     this.canvas.style.height = h + 'px';
+    // HTML-меню (кнопки «Следующий»/«Выбор уровня») масштабируется вместе с
+    // канвасом, иначе на узких/низких окнах кнопки фикс. размера вылезали за канвас
+    if (this.menu) {
+      const s = w / CONFIG.W;
+      // transform-origin задан в CSS (#menu): 50% 100% — у нижнего края по центру
+      this.menu.style.transform = s === 1 ? 'none' : 'scale(' + s.toFixed(6) + ')';
+    }
   }
 
   spawnParticles(x, y, count, color, spread = 200) {

@@ -59,6 +59,7 @@ global.localStorage = { getItem: () => null, setItem: () => {} };
 const menuBtns = {};
 const menuEl = {
   _ptr: [],
+  style: {}, // resize() пишет сюда масштаб меню
   classList: {
     _set: new Set(),
     add(c) { this._set.add(c); },
@@ -297,6 +298,37 @@ check('меню: при победе и после смерти показыва
   g.state = 'won';
   g.updateMenu();
   if (!menuEl.classList.contains('show')) throw new Error('меню не показано при победе');
+});
+
+check('меню победы масштабируется вместе с канвасом (кнопки не вылезают за экран)', () => {
+  const html = fs.readFileSync(root + 'gm-1.html', 'utf8');
+  // Якорь масштаба — низ по центру (кнопки прижаты к низу канваса)
+  if (!/transform-origin\s*:\s*50%\s*100%/.test(html)) {
+    throw new Error('gm-1.html: #menu без transform-origin 50% 100%');
+  }
+  const g = boot('');
+  // Узкое окно (портрет 640x720): канвас 640x360, масштаб меню 0.5
+  const prevW = global.window.innerWidth, prevH = global.window.innerHeight;
+  global.window.innerWidth = 640; global.window.innerHeight = 720;
+  g.resize();
+  if (g.canvas.style.width !== '640px') throw new Error('канвас: ' + g.canvas.style.width);
+  if (menuEl.style.transform !== 'scale(0.500000)') {
+    throw new Error('меню на узком окне: ' + menuEl.style.transform);
+  }
+  // Ровно 1280x720 (штатный размер): без transform
+  global.window.innerWidth = 1280; global.window.innerHeight = 720;
+  g.resize();
+  if (menuEl.style.transform !== 'none') {
+    throw new Error('меню на 1280x720: ' + menuEl.style.transform);
+  }
+  // Большое окно 1920x1080: канвас 1920x1080, масштаб 1.5 — кнопки растут с канвасом
+  global.window.innerWidth = 1920; global.window.innerHeight = 1080;
+  g.resize();
+  if (g.canvas.style.width !== '1920px') throw new Error('канвас: ' + g.canvas.style.width);
+  if (menuEl.style.transform !== 'scale(1.500000)') {
+    throw new Error('меню на широком окне: ' + menuEl.style.transform);
+  }
+  global.window.innerWidth = prevW; global.window.innerHeight = prevH;
 });
 
 check('тап после смерти (мимо кнопок) перезапускает уровень; кнопки ведут по ссылкам', () => {
