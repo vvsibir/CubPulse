@@ -1680,10 +1680,6 @@ class Game {
       ctx.font = 'bold 58px Arial';
       ctx.fillText('ТАПНИ, ЧТОБЫ НАЧАТЬ', CONFIG.W / 2, CONFIG.H / 2 - 40);
 
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.font = 'bold 24px Arial';
-      ctx.fillText('первый тап включит музыку и запустит бег · или пробел', CONFIG.W / 2, CONFIG.H / 2 + 20);
       ctx.restore();
     }
 
@@ -1706,7 +1702,7 @@ class Game {
 
       ctx.font = 'bold 24px Arial';
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.fillText('Тапни, чтобы заново', CONFIG.W / 2, CONFIG.H / 2 + 72);
+      ctx.fillText('Тапни, чтобы начать заново', CONFIG.W / 2, CONFIG.H / 2 + 72);
       ctx.restore();
     }
 
