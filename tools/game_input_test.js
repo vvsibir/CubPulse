@@ -217,7 +217,7 @@ check('пробел на старте: бег с музыкой, без прыж
 
 check('без параметра запроса загружается уровень 1', () => {
   if (game.level.id !== 1) throw new Error('id=' + game.level.id);
-  if (!document.title.includes('Level 1')) throw new Error('title не установлен: ' + document.title);
+  if (!document.title.includes('Уровень 1')) throw new Error('title не установлен: ' + document.title);
   if (game.level.length !== 4600) throw new Error('length=' + game.level.length);
   if (!game.level.bg || game.level.bg.start !== 170) throw new Error('палитра bg не подхвачена');
 });
@@ -232,7 +232,7 @@ check('?level=2 загружает уровень 2 (тема «Классика
   if (t2.name !== 'Классика') throw new Error('имя темы уровня 2: ' + t2.name);
   if (t2.c.playerA !== '#ffe066') throw new Error('цвета default: ' + t2.c.playerA);
   if (Math.abs(g2.sound._stepDur - 60 / 138 / 4) > 1e-9) throw new Error('музыка default: ' + g2.sound._stepDur);
-  if (document.title.includes('Level 1')) throw new Error('title не обновился: ' + document.title);
+  if (document.title.includes('Уровень 1')) throw new Error('title не обновился: ' + document.title);
   if (g2.state !== 'ready' || !g2.player) throw new Error('игра не ждёт стартового тапа: ' + g2.state);
 });
 
@@ -382,6 +382,16 @@ check('i18n: setLang("en") переводит оверлей рестарта (�
   g.draw();
   if (!texts.some((s) => s.includes('Tap to restart'))) throw new Error('en-подсказка не найдена: ' + texts.join(' | '));
   window.GM_I18N.setLang('ru'); // не влияем на остальные проверки
+});
+
+check('i18n: win.complete и levelName переведены (ru: «УРОВЕНЬ ПРОЙДЕН!», en: не остаётся «Level N»)', () => {
+  if (window.GM_I18N.t('win.complete') !== 'УРОВЕНЬ ПРОЙДЕН!') throw new Error('ru win.complete: ' + window.GM_I18N.t('win.complete'));
+  if (window.GM_I18N.levelName('Level 4') !== 'Уровень 4') throw new Error('ru levelName: ' + window.GM_I18N.levelName('Level 4'));
+  if (window.GM_I18N.levelName('Аврора') !== 'Аврора') throw new Error('тематическое имя не должно переводиться: ' + window.GM_I18N.levelName('Аврора'));
+  window.GM_I18N.setLang('en');
+  if (window.GM_I18N.t('win.complete') !== 'LEVEL COMPLETE!') throw new Error('en win.complete: ' + window.GM_I18N.t('win.complete'));
+  if (window.GM_I18N.levelName('Level 4') !== 'Level 4') throw new Error('en levelName: ' + window.GM_I18N.levelName('Level 4'));
+  window.GM_I18N.setLang('ru');
 });
 
 check('«Следующий» с уровня 3 ведёт на 4, с последнего (20) — на экран выбора уровней', () => {

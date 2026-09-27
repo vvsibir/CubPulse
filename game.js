@@ -39,6 +39,8 @@ const CONFIG = {
    SDK платформы при старте; вне платформы по умолчанию ru.
    ========================================================= */
 const GM_TXT = (k, v) => (window.GM_I18N ? window.GM_I18N.t(k, v) : k);
+// Имя уровня: «Level N» из level-*.js → по-русски «Уровень N» (через GM_I18N.levelName)
+const GM_LEVEL_NAME = (s) => (window.GM_I18N ? window.GM_I18N.levelName(s) : s);
 
 /* =========================================================
    ИГРОК
@@ -1611,7 +1613,7 @@ class Game {
     ctx.shadowBlur = 6;
     ctx.textAlign = 'left';
     ctx.fillText(GM_TXT('hud.attempt', { n: this.attempts }), 24, 40);
-    ctx.fillText(this.level.name || '', 24, 68);
+    ctx.fillText(GM_LEVEL_NAME(this.level.name || ''), 24, 68);
 
     if (this.demo) {
       ctx.fillStyle = 'rgba(255, 210, 90, 0.95)';
@@ -1738,7 +1740,7 @@ class Game {
       ctx.shadowColor = c.finishA;
       ctx.shadowBlur = 40;
       ctx.font = 'bold 90px Arial';
-      ctx.fillText('LEVEL COMPLETE!', CONFIG.W / 2, CONFIG.H / 2 - 60);
+      ctx.fillText(GM_TXT('win.complete'), CONFIG.W / 2, CONFIG.H / 2 - 60);
 
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#fff';
@@ -1809,4 +1811,4 @@ const LEVEL = window.GM_LEVELS[id] || window.GM_LEVELS['1'];
 const canvas = document.getElementById('game');
 const game = new Game(canvas, LEVEL, (new URLSearchParams(window.location.search).get('mode') || '') === 'demo');
 game.camera.x = -CONFIG.W * CONFIG.CAMERA_X_RATIO;
-if (LEVEL.name) document.title = 'CubPulse — ' + LEVEL.name;
+if (LEVEL.name) document.title = 'CubPulse — ' + GM_LEVEL_NAME(LEVEL.name);

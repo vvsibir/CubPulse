@@ -38,7 +38,7 @@
       'linear-gradient(135deg, hsl(' + hue1 + ', 60%, 16%), hsl(' + hue2 + ', 70%, 26%))';
     a.innerHTML =
       '<div class="num">' + id + '</div>' +
-      '<div class="name">' + (L.name || ('Level ' + id)) + '</div>' +
+      '<div class="name">' + (window.GM_I18N ? window.GM_I18N.levelName(L.name || ('Level ' + id)) : (L.name || ('Level ' + id))) + '</div>' +
       '<div class="meta">время: ~' + secs + ' сек</div>' +
       '<div class="meta">объектов: ' + (L.objects ? L.objects.length : '?') + '</div>' +
       (tn ? '<div class="meta">тема: ' + tn + '</div>' : '') +

@@ -76,14 +76,14 @@ check('карточки 1..20 строятся сразу на этапе скр
 check('карточка уровня 1: ссылка gm-1.html?level=1 и палитра из bg', () => {
   const c = wrap.children[0];
   if (c.href !== 'gm-1.html?level=1') throw new Error('href: ' + c.href);
-  if (!c.innerHTML.includes('Level 1')) throw new Error('имя не в карточке');
+  if (!c.innerHTML.includes('Уровень 1')) throw new Error('имя не в карточке');
   if (!c.style.background.includes('hsl(170, 60%, 16%)')) throw new Error('палитра: ' + c.style.background);
 });
 
 check('карточка уровня 2: ссылка gm-1.html?level=2 и палитра по умолчанию', () => {
   const c = wrap.children[1];
   if (c.href !== 'gm-1.html?level=2') throw new Error('href: ' + c.href);
-  if (!c.innerHTML.includes('Level 2')) throw new Error('имя не в карточке');
+  if (!c.innerHTML.includes('Уровень 2')) throw new Error('имя не в карточке');
   if (!c.style.background.includes('hsl(220, 60%, 16%)')) throw new Error('палитра по умолчанию: ' + c.style.background);
 });
 

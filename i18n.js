@@ -29,6 +29,8 @@ window.GM_I18N = (function () {
       'dead.tapRestart': 'Тапни, чтобы начать заново',
       'win.time': 'Время: {t} сек',
       'win.attempts': 'Попыток: {n}',
+      'win.complete': 'УРОВЕНЬ ПРОЙДЕН!',
+      'level.name': 'Уровень {n}',
       'card.time': 'время: ~{s} сек',
       'card.objects': 'объектов: {n}',
       'card.theme': 'тема: {name}',
@@ -46,6 +48,8 @@ window.GM_I18N = (function () {
       'dead.tapRestart': 'Tap to restart',
       'win.time': 'Time: {t} s',
       'win.attempts': 'Attempts: {n}',
+      'win.complete': 'LEVEL COMPLETE!',
+      'level.name': 'Level {n}',
       'card.time': 'time: ~{s} s',
       'card.objects': 'objects: {n}',
       'card.theme': 'theme: {name}',
@@ -100,5 +104,13 @@ window.GM_I18N = (function () {
     t: t,
     getLang: function () { return lang; },
     applyTexts: applyTexts,
+    // Имена уровней из level-*.js: «Level N» переводим («Уровень N» / «Level N»),
+    // тематические имена («Аврора», «Закат», ...) — без изменений.
+    levelName: function (name) {
+      if (typeof name !== 'string') return name;
+      var m = /^Level (\d+)$/.exec(name);
+      if (m) return t('level.name', { n: m[1] });
+      return name;
+    },
   };
 })();
