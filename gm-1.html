@@ -75,12 +75,25 @@
   }
 </style>
 <script>
-/* Yandex Games SDK — подключаем асинхронно.
-   Внутри Яндекс.Игр инициализирует SDK и сообщает платформе, что игра загружена
-   (ysdk.features.LoadingAPI.ready()). Вне платформы (локально, GitHub Pages)
-   YaGames не появится — игра работает без SDK: все вызовы в game.js защищены
-   через window.ysdk. */
+/* Yandex Games SDK — подключаем асинхронно и только внутри платформы
+   Яндекс.Игр (игра во iframe страницы yandex.*). Вне платформы (локальный
+   файл, localhost, GitHub Pages без iframe) SDK НЕ грузим: сам скрипт при
+   загрузке обращается к родителю через postMessage и падает «No parent to
+   post message». Все вызовы game.js уже защищены проверкой window.ysdk. */
 (function () {
+  function isYandexEmbed() {
+    try {
+      if (window.self === window.top) return false; // не во фрейме — вне платформы
+      // Рег-эксп с «//» не используем: релизный стриппер комментариев
+      // не знает regex-литералы. Хост берём сплитом строки referrer.
+      var host = (document.referrer || '').split('/')[2] || '';
+      if (host) host = host.split(':')[0]; // без порта
+      if (!host) host = window.parent.location.hostname; // кросс-домен: бросит SecurityError
+      return /(^|\.)yandex\.(ru|net|kz|by|uz|az|com|com\.tr|com\.ge|com\.am)$/i.test(host);
+    } catch (e) {
+      return window.self !== window.top; // кросс-доменный iframe — считаем платформой
+    }
+  }
   function initSDK() {
     try {
       if (typeof YaGames === 'undefined' || window.ysdk) return;
@@ -92,6 +105,7 @@
       }).catch(function () {});
     } catch (e) {}
   }
+  if (!isYandexEmbed()) return; // локальный запуск: SDK вообще не подключаем
   if (typeof YaGames !== 'undefined') { initSDK(); return; }
   var s = document.createElement('script');
   s.src = 'https://yandex.ru/games/sdk/v2';
