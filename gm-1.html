@@ -100,6 +100,12 @@
       if (typeof YaGames === 'undefined' || window.ysdk) return;
       YaGames.init().then(function (ysdk) {
         window.ysdk = ysdk;
+        // 2.14: автоопределение языка платформы при старте
+        var lang = ysdk.environment && ysdk.environment.i18n && ysdk.environment.i18n.lang;
+        if (lang) {
+          window.GM_I18N_LANG = lang; // на случай, если i18n.js ещё не загрузился
+          if (window.GM_I18N) window.GM_I18N.setLang(lang);
+        }
         if (ysdk.features && ysdk.features.LoadingAPI && ysdk.features.LoadingAPI.ready) {
           ysdk.features.LoadingAPI.ready();
         }
@@ -122,8 +128,8 @@
   <div id="stage">
     <canvas id="game" width="1280" height="720"></canvas>
     <div id="menu">
-      <button class="menu-btn" id="btn-next">Следующий</button>
-      <button class="menu-btn menu-btn--select" id="btn-select">Выбор уровня</button>
+      <button class="menu-btn" id="btn-next" data-i18n="menu.next">Следующий</button>
+      <button class="menu-btn menu-btn--select" id="btn-select" data-i18n="menu.select">Выбор уровня</button>
     </div>
   </div>
 </div>
@@ -162,6 +168,7 @@
 <script src="level-18.js"></script>
 <script src="level-19.js"></script>
 <script src="level-20.js"></script>
+<script src="i18n.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

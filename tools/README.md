@@ -37,7 +37,7 @@ node tools/sound_test.js && node tools/game_input_test.js && node tools/levels_s
 ## Релиз
 
 - `release.js` — сборка папки `Release/` в корне проекта: копирует туда **только
-  нужные для игры файлы** (`gm-1.html`, `index.html`, `game.js`,
+  нужные для игры файлы** (`gm-1.html`, `index.html`, `i18n.js`, `game.js`,
   `level-1.js … level-20.js`) и удаляет из них **все комментарии**
   (JS: `//` и блочные; HTML: `<!-- -->` и комментарии внутри `inline-<script>`).
   После сборки проверяет синтаксис всех выпущенных JS (`node --check`, включая

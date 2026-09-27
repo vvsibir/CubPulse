@@ -6,7 +6,7 @@ const path = require('path');
 const root = path.join(__dirname, '..') + '/';
 
 const html = fs.readFileSync(root + 'index.html', 'utf8');
-const pageScript = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const pageScript = html.match(/<script id="levels-app">([\s\S]*?)<\/script>/)[1];
 
 // Все уровни level-1.js .. level-20.js (сортируем по номеру)
 const levelFiles = fs.readdirSync(root)
@@ -36,7 +36,8 @@ global.document = {
   createDocumentFragment() { return frag; },
 };
 
-// Подгружаем реальные level-N.js (зарегистрируют все уровни в реестр)
+// Подгружаем реальные i18n.js и level-N.js (зарегистрируют все уровни в реестр)
+eval(fs.readFileSync(root + 'i18n.js', 'utf8'));
 for (const f of levelFiles) {
   eval(fs.readFileSync(root + f, 'utf8'));
 }

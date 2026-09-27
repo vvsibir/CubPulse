@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>CubPulse — выбор уровня</title>
+<title data-i18n-title="page.title.select">CubPulse — выбор уровня</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
@@ -118,7 +118,8 @@
 <script src="level-18.js"></script>
 <script src="level-19.js"></script>
 <script src="level-20.js"></script>
-<script>
+<script src="i18n.js"></script>
+<script id="levels-app">
 /* =========================================================
    Экран выбора уровней. Карточки 1..20 строятся из реестра
    window.GM_LEVELS (level-1.js..level-20.js подключены явными
@@ -161,10 +162,10 @@
     a.innerHTML =
       '<div class="num">' + id + '</div>' +
       '<div class="name">' + (L.name || ('Level ' + id)) + '</div>' +
-      '<div class="meta">время: ~' + secs + ' сек</div>' +
-      '<div class="meta">объектов: ' + (L.objects ? L.objects.length : '?') + '</div>' +
-      (tn ? '<div class="meta">тема: ' + tn + '</div>' : '') +
-      '<div class="play">Играть →</div>';
+      '<div class="meta">' + (window.GM_I18N ? window.GM_I18N.t('card.time', { s: secs }) : 'время: ~' + secs + ' сек') + '</div>' +
+      '<div class="meta">' + (window.GM_I18N ? window.GM_I18N.t('card.objects', { n: L.objects ? L.objects.length : '?' }) : 'объектов: ' + (L.objects ? L.objects.length : '?')) + '</div>' +
+      (tn ? '<div class="meta">' + (window.GM_I18N ? window.GM_I18N.t('card.theme', { name: tn }) : 'тема: ' + tn) + '</div>' : '') +
+      '<div class="play">' + (window.GM_I18N ? window.GM_I18N.t('card.play') : 'Играть →') + '</div>';
     return a;
   }
 
@@ -180,13 +181,59 @@
       built++;
     }
     if (built === 0) {
-      status.textContent = 'Уровни не найдены';
+      status.textContent = window.GM_I18N ? window.GM_I18N.t('card.notFound') : 'Уровни не найдены';
       return;
     }
     wrap.appendChild(frag);
   }
 
+  window.GM_SELECT_RENDER = render; // пересборка карточек после смены языка (SDK)
   render();
+})();
+</script>
+<script>
+/* Yandex Games SDK — как в gm-1.html: index.html теперь стартовая страница
+   архива, поэтому SDK (и автоопределение языка) инициализируем здесь же. */
+(function () {
+  function isYandexEmbed() {
+    try {
+      if (window.self === window.top) return false;
+      var host = (document.referrer || '').split('/')[2] || '';
+      if (host) host = host.split(':')[0];
+      if (!host) host = window.parent.location.hostname;
+      return /(^|\.)yandex\.(ru|net|kz|by|uz|az|com|com\.tr|com\.ge|com\.am)$/i.test(host);
+    } catch (e) {
+      return window.self !== window.top;
+    }
+  }
+  function initSDK() {
+    try {
+      if (typeof YaGames === 'undefined' || window.ysdk) return;
+      YaGames.init().then(function (ysdk) {
+        window.ysdk = ysdk;
+        // 2.14: автоопределение языка платформы при старте
+        var lang = ysdk.environment && ysdk.environment.i18n && ysdk.environment.i18n.lang;
+        if (lang) {
+          window.GM_I18N_LANG = lang;
+          if (window.GM_I18N) {
+            window.GM_I18N.setLang(lang);
+            if (window.GM_SELECT_RENDER) window.GM_SELECT_RENDER();
+          }
+        }
+        if (ysdk.features && ysdk.features.LoadingAPI && ysdk.features.LoadingAPI.ready) {
+          ysdk.features.LoadingAPI.ready();
+        }
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  if (!isYandexEmbed()) return;
+  if (typeof YaGames !== 'undefined') { initSDK(); return; }
+  var s = document.createElement('script');
+  s.src = 'https://yandex.ru/games/sdk/v2';
+  s.async = true;
+  s.addEventListener('load', initSDK, false);
+  s.addEventListener('error', function () {}, false);
+  document.head.appendChild(s);
 })();
 </script>
 </body>

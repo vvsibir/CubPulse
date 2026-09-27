@@ -34,6 +34,13 @@ const CONFIG = {
 };
 
 /* =========================================================
+   ЛОКАЛИЗАЦИЯ (требования 2.14 / 8.2.3)
+   Тексты интерфейса берём из GM_I18N (i18n.js). Язык задаёт
+   SDK платформы при старте; вне платформы по умолчанию ru.
+   ========================================================= */
+const GM_TXT = (k, v) => (window.GM_I18N ? window.GM_I18N.t(k, v) : k);
+
+/* =========================================================
    ИГРОК
    ========================================================= */
 class Player {
@@ -1603,12 +1610,12 @@ class Game {
     ctx.shadowColor = '#000';
     ctx.shadowBlur = 6;
     ctx.textAlign = 'left';
-    ctx.fillText(`Попытка: ${this.attempts}`, 24, 40);
+    ctx.fillText(GM_TXT('hud.attempt', { n: this.attempts }), 24, 40);
     ctx.fillText(this.level.name || '', 24, 68);
 
     if (this.demo) {
       ctx.fillStyle = 'rgba(255, 210, 90, 0.95)';
-      ctx.fillText('ДЕМО — автопрохождение', 24, 96);
+      ctx.fillText(GM_TXT('hud.demo'), 24, 96);
       ctx.fillStyle = '#fff';
     }
 
@@ -1693,7 +1700,7 @@ class Game {
       ctx.shadowColor = c.playerB;
       ctx.shadowBlur = 30 * pulse;
       ctx.font = 'bold 58px Arial';
-      ctx.fillText('ТАПНИ, ЧТОБЫ НАЧАТЬ', CONFIG.W / 2, CONFIG.H / 2 - 40);
+      ctx.fillText(GM_TXT('ready.tap'), CONFIG.W / 2, CONFIG.H / 2 - 40);
 
       ctx.restore();
     }
@@ -1713,11 +1720,11 @@ class Game {
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 28px Arial';
-      ctx.fillText(`Попыток: ${this.attempts}`, CONFIG.W / 2, CONFIG.H / 2 + 30);
+      ctx.fillText(GM_TXT('dead.attempts', { n: this.attempts }), CONFIG.W / 2, CONFIG.H / 2 + 30);
 
       ctx.font = 'bold 24px Arial';
       ctx.fillStyle = 'rgba(255,255,255,0.75)';
-      ctx.fillText('Тапни, чтобы начать заново', CONFIG.W / 2, CONFIG.H / 2 + 72);
+      ctx.fillText(GM_TXT('dead.tapRestart'), CONFIG.W / 2, CONFIG.H / 2 + 72);
       ctx.restore();
     }
 
@@ -1736,8 +1743,8 @@ class Game {
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 32px Arial';
-      ctx.fillText(`Время: ${this.totalTime.toFixed(2)} сек`, CONFIG.W / 2, CONFIG.H / 2 + 20);
-      ctx.fillText(`Попыток: ${this.attempts}`, CONFIG.W / 2, CONFIG.H / 2 + 65);
+      ctx.fillText(GM_TXT('win.time', { t: this.totalTime.toFixed(2) }), CONFIG.W / 2, CONFIG.H / 2 + 20);
+      ctx.fillText(GM_TXT('win.attempts', { n: this.attempts }), CONFIG.W / 2, CONFIG.H / 2 + 65);
       ctx.restore();
     }
   }

@@ -6,6 +6,7 @@ const root = path.join(__dirname, '..') + '/';
 const levelFiles = fs.readdirSync(root)
   .filter((f) => /^level-\d+\.js$/.test(f))
   .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
+const i18nSrc = fs.readFileSync(root + 'i18n.js', 'utf8');
 const levelSrc = levelFiles.map((f) => fs.readFileSync(root + f, 'utf8')).join('\n');
 const gameSrc = fs.readFileSync(root + 'game.js', 'utf8');
 
@@ -102,7 +103,8 @@ const boot = (search) => {
   clearListeners();
   global.window.location = { search: search, href: '' };
   menuEl.classList._set.clear();
-  const script = levelSrc + '\n' + gameSrc + '\nglobalThis.__game = game;';
+  // i18n.js первым — GM_TXT() в game.js читает window.GM_I18N (язык по умолчанию ru)
+  const script = i18nSrc + '\n' + levelSrc + '\n' + gameSrc + '\nglobalThis.__game = game;';
   eval(script);
   return globalThis.__game;
 };
@@ -366,6 +368,20 @@ check('game over: оверлей рисует подсказку «Тапни, �
   });
   g.draw();
   if (!texts.some((s) => s.includes('Тапни, чтобы начать заново'))) throw new Error('нет подсказки рестарта тапом');
+});
+
+check('i18n: setLang("en") переводит оверлей рестарта (иначе 2.14 не работает)', () => {
+  const g = boot('');
+  g.state = 'dead'; g.deathTimer = 0.5;
+  const texts = [];
+  g.ctx = new Proxy({}, {
+    get: (t, p) => (p === 'createLinearGradient' ? () => ({ addColorStop() {} }) : p === 'fillText' ? (s) => texts.push(String(s)) : () => undefined),
+    set: () => true,
+  });
+  window.GM_I18N.setLang('en');
+  g.draw();
+  if (!texts.some((s) => s.includes('Tap to restart'))) throw new Error('en-подсказка не найдена: ' + texts.join(' | '));
+  window.GM_I18N.setLang('ru'); // не влияем на остальные проверки
 });
 
 check('«Следующий» с уровня 3 ведёт на 4, с последнего (20) — на экран выбора уровней', () => {

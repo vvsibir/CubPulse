@@ -11,6 +11,7 @@ HTML5-клон CubPulse, **single-file-free**: нет внешних файло�
 | Файл | Роль |
 | --- | --- |
 | `game.js` | Движок + вся музыка/SFX (секции BPM→MUSIC→Sound→Game) |
+| `i18n.js` | Локализация (2.14): язык от SDK Яндекс.Игр (ru/en), тексты `GM_I18N.t()` |
 | `gm-1.html` | Игра (канвас + оверлеи `#menu`, `#overlay-ready`, ...); подключает level-1..20.js и game.js |
 | `index.html` | Экран выбора уровня |
 | `level-1.js` … `level-20.js` | Уровни; **`level-4.js`…`level-20.js` генерируемые** |
