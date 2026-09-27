@@ -28,7 +28,7 @@
     a.innerHTML =
       '<div class="num">' + id + '</div>' +
       '<div class="name">' + (L.name || ('Level ' + id)) + '</div>' +
-      '<div class="meta">длина ' + L.length + ' px · ~' + secs + ' сек</div>' +
+      '<div class="meta">~' + secs + ' сек</div>' +
       '<div class="meta">объектов: ' + (L.objects ? L.objects.length : '?') + '</div>' +
       '<div class="play">Играть →</div>';
     return a;
