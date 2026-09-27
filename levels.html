@@ -98,13 +98,32 @@
 <div id="levels"></div>
 <div id="status"></div>
 
+<script src="level-1.js"></script>
+<script src="level-2.js"></script>
+<script src="level-3.js"></script>
+<script src="level-4.js"></script>
+<script src="level-5.js"></script>
+<script src="level-6.js"></script>
+<script src="level-7.js"></script>
+<script src="level-8.js"></script>
+<script src="level-9.js"></script>
+<script src="level-10.js"></script>
+<script src="level-11.js"></script>
+<script src="level-12.js"></script>
+<script src="level-13.js"></script>
+<script src="level-14.js"></script>
+<script src="level-15.js"></script>
+<script src="level-16.js"></script>
+<script src="level-17.js"></script>
+<script src="level-18.js"></script>
+<script src="level-19.js"></script>
+<script src="level-20.js"></script>
 <script>
 /* =========================================================
-   Экран выбора уровней.
-   Уровни НЕ захардкожены: по очереди пытаемся подключить
-   level-1.js, level-2.js, ... пока файл не «не найдётся».
-   Каждый загруженный скрипт регистрирует себя в
-   window.GM_LEVELS — из реестра и строятся карточки.
+   Экран выбора уровней. Карточки 1..20 строятся из реестра
+   window.GM_LEVELS (level-1.js..level-20.js подключены явными
+   тегами выше). Авто-пробы level-21 и дальше нет — в консоли
+   не будет 404-ошибок для несуществующих файлов.
    ========================================================= */
 (function () {
   'use strict';
@@ -152,31 +171,22 @@
   function render() {
     const wrap = document.getElementById('levels');
     const status = document.getElementById('status');
-    const ids = Object.keys(root.GM_LEVELS)
-      .map(Number)
-      .filter(function (n) { return !isNaN(n); })
-      .sort(function (a, b) { return a - b; });
-
-    if (ids.length === 0) {
+    const frag = document.createDocumentFragment();
+    let built = 0;
+    for (let id = 1; id <= 20; id++) {
+      const L = root.GM_LEVELS[id];
+      if (!L) continue; // файл level-N.js отсутствует — карточку пропускаем
+      frag.appendChild(buildCard(id, L));
+      built++;
+    }
+    if (built === 0) {
       status.textContent = 'Уровни не найдены';
       return;
     }
-
-    const frag = document.createDocumentFragment();
-    ids.forEach(function (id) {
-      frag.appendChild(buildCard(id, root.GM_LEVELS[id]));
-    });
     wrap.appendChild(frag);
   }
 
-  // Проба скриптов по порядку; останавливаемся на первом отсутствующем
-  (function probe(id) {
-    const s = document.createElement('script');
-    s.src = 'level-' + id + '.js';
-    s.onload = function () { probe(id + 1); };      // найдено — пробуем следующий
-    s.onerror = function () { render(); };          // конец списка — строим карточки
-    document.head.appendChild(s);
-  })(1);
+  render();
 })();
 </script>
 </body>

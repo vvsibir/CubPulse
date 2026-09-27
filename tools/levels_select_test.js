@@ -1,5 +1,6 @@
 // Тест экрана выбора уровней (levels.html):
-// проба level-N.js по порядку + построение карточек из реестра GM_LEVELS
+// карточки 1..20 строятся из реестра GM_LEVELS (level-1..20.js подключены
+// ЯВНЫМИ тегами, без авто-пробы level-21/22 — иначе в консоли 404-ошибки)
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..') + '/';
@@ -17,7 +18,6 @@ const levelCount = levelFiles.length;
 /* --- Мок DOM --- */
 global.window = { location: { search: '' } }; // level-*.js регистрируются сюда через window.GM_LEVELS
 
-const headScripts = [];
 const frag = { children: [], appendChild(c) { this.children.push(c); } };
 const wrap = {
   children: [],
@@ -31,12 +31,8 @@ const wrap = {
 };
 const status = { textContent: '' };
 global.document = {
-  head: { appendChild(s) { headScripts.push(s); } },
   getElementById(id) { return id === 'levels' ? wrap : id === 'status' ? status : null; },
-  createElement(tag) {
-    if (tag === 'script') return { src: '', onload: null, onerror: null };
-    return { style: {}, className: '', href: '', innerHTML: '' };
-  },
+  createElement() { return { style: {}, className: '', href: '', innerHTML: '' }; },
   createDocumentFragment() { return frag; },
 };
 
@@ -48,6 +44,7 @@ if (!global.window.GM_LEVELS['1'] || !global.window.GM_LEVELS['20']) {
   throw new Error('уровни не зарегистрировались');
 }
 
+// Уровни в HTML уже подключены явными тегами — рендер при запуске синхронный
 eval(pageScript);
 
 let failures = 0;
@@ -56,24 +53,23 @@ const check = (name, fn) => {
   catch (e) { failures++; console.log(' FAIL ' + name + ' -> ' + e.message); }
 };
 
-check('проба идёт по порядку: level-1 -> ... -> level-' + levelCount + ', стоп на первом отсутствующем', () => {
-  if (headScripts.length !== 1) throw new Error('скриптов после старта: ' + headScripts.length);
-  // Прогоняем onload по 1..20; на 20-м создаётся level-21 (которого нет)
+check('levels.html подключает level-1..20.js явными тегами по порядку (без авто-пробы)', () => {
+  const srcs = [...html.matchAll(/<script src="(level-\d+\.js)"><\/script>/g)].map((m) => m[1]);
+  if (srcs.length !== levelCount) throw new Error('тегов уровней: ' + srcs.length + ', ждали ' + levelCount);
   for (let i = 0; i < levelCount; i++) {
-    const expected = 'level-' + (i + 1) + '.js';
-    if (headScripts[i].src !== expected) throw new Error('шаг ' + (i + 1) + ': ' + headScripts[i].src);
-    headScripts[i].onload();
+    if (srcs[i] !== 'level-' + (i + 1) + '.js') throw new Error('тег ' + (i + 1) + ': ' + srcs[i]);
   }
-  if (headScripts.length !== levelCount + 1) throw new Error('скриптов после цепочки: ' + headScripts.length);
-  if (headScripts[levelCount].src !== 'level-' + (levelCount + 1) + '.js') {
-    throw new Error('21-й: ' + headScripts[levelCount].src);
+  if (!pageScript.includes('id <= 20') || pageScript.includes('probe')) {
+    throw new Error('авто-проба не удалена из скрипта');
   }
 });
 
-check('карточки строятся после первого отсутствующего скрипта (level-' + (levelCount + 1) + ')', () => {
-  headScripts[levelCount].onerror(); // level-21.js не найден -> render()
-  if (headScripts.length !== levelCount + 1) throw new Error('после onerror проба продолжилась: ' + headScripts.length);
+check('карточки 1..20 строятся сразу на этапе скрипта (без поиска level-21)', () => {
   if (wrap.children.length !== levelCount) throw new Error('карточек: ' + wrap.children.length);
+  const nums = wrap.children.map((c) => Number(c.href.match(/level=(\d+)/)[1]));
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] !== i + 1) throw new Error('порядок ' + i + ': ' + nums[i]);
+  }
 });
 
 check('карточка уровня 1: ссылка gm-1.html?level=1 и палитра из bg', () => {
@@ -101,14 +97,6 @@ check('карточка нового уровня 4: палитра из bg и �
   if (c.innerHTML.includes('длина') || c.innerHTML.includes('px')) throw new Error('длина осталась в карточке: ' + c.innerHTML);
 });
 
-check('сортировка по номеру уровня (1..20 по порядку)', () => {
-  const nums = wrap.children.map((c) => Number(c.href.match(/level=(\d+)/)[1]));
-  if (nums.length !== 20) throw new Error('карточек: ' + nums.length);
-  for (let i = 0; i < nums.length; i++) {
-    if (nums[i] !== i + 1) throw new Error('порядок ' + i + ': ' + nums[i]);
-  }
-});
-
 check('счётчик объектов и время в карточке', () => {
   const c = wrap.children[0];
   if (!c.innerHTML.includes('объектов: 13')) throw new Error('объектов: ' + c.innerHTML);
@@ -127,13 +115,9 @@ check('карточка показывает тему уровня; у уров�
 });
 
 check('?mode= из URL пробрасывается в ссылки карточек (не сбрасывается)', () => {
-  // Повторный прогон страницы с ?mode=demo: проба + render как в реальном браузере
+  // Повторный прогон страницы с ?mode=demo: рендер работает синхронно, как в браузере
   global.window.location.search = '?mode=demo';
   eval(pageScript);
-  for (let i = 0; i < levelCount; i++) {
-    headScripts[headScripts.length - 1].onload();
-  }
-  headScripts[headScripts.length - 1].onerror(); // level-21 не найден -> render()
   const base = wrap.children.length - levelCount; // смещение к карточкам нового прогона
   if (base < levelCount) throw new Error('новых карточек нет');
   for (let i = 0; i < levelCount; i++) {
