@@ -351,7 +351,7 @@ check('тап после смерти (мимо кнопок) перезапус
 
   // «Выбор уровня»
   menuBtns['#btn-select'].click();
-  if (global.window.location.href !== 'levels.html') {
+  if (global.window.location.href !== 'index.html') {
     throw new Error('«Выбор уровня»: ' + global.window.location.href);
   }
 });
@@ -376,7 +376,7 @@ check('«Следующий» с уровня 3 ведёт на 4, с после
   }
   const g20 = boot('?level=20');
   menuBtns['#btn-next'].click();
-  if (global.window.location.href !== 'levels.html') {
+  if (global.window.location.href !== 'index.html') {
     throw new Error('next с уровня 20: ' + global.window.location.href);
   }
 });
@@ -391,7 +391,7 @@ check('mode из запроса не сбрасывается: следующи�
 
   // «Выбор уровня» с ?mode=demo
   menuBtns['#btn-select'].click();
-  if (global.window.location.href !== 'levels.html?mode=demo') {
+  if (global.window.location.href !== 'index.html?mode=demo') {
     throw new Error('«Выбор уровня» с mode=demo: ' + global.window.location.href);
   }
 

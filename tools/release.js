@@ -2,7 +2,7 @@
    РЕЛИЗ-СКРИПТ: сборка папки Release
    ---------------------------------------------------------
    - копирует ТОЛЬКО нужные для игры файлы:
-       gm-1.html, levels.html, game.js, level-1.js..level-20.js
+       gm-1.html, index.html, game.js, level-1.js..level-20.js
    - из каждого файла удаляет ВСЕ комментарии:
        JS : построчные // и блочные (вне строк и шаблонов)
        HTML : комментарии разметки и внутри inline-<script>
@@ -21,7 +21,7 @@ const releaseDir = path.join(root, 'Release');
 const LEVEL_COUNT = 20;
 
 /* --- Список нужных файлов --- */
-const files = ['gm-1.html', 'levels.html', 'game.js'];
+const files = ['gm-1.html', 'index.html', 'game.js'];
 for (let i = 1; i <= LEVEL_COUNT; i++) files.push('level-' + i + '.js');
 
 /* --- Удаление комментариев из JS-кода ---
@@ -128,7 +128,7 @@ for (const name of files) {
   }
 }
 // inline-скрипты HTML
-for (const name of ['gm-1.html', 'levels.html']) {
+for (const name of ['gm-1.html', 'index.html']) {
   const html = fs.readFileSync(path.join(releaseDir, name), 'utf8');
   const blocks = html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi);
   let idx = 0;

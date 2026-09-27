@@ -1156,7 +1156,7 @@ class Game {
   }
   _selectPage() { // для экрана выбора уровней — с префиксом '?'
     const m = new URLSearchParams(window.location.search).get('mode');
-    return m ? 'levels.html?mode=' + encodeURIComponent(m) : 'levels.html';
+    return m ? 'index.html?mode=' + encodeURIComponent(m) : 'index.html';
   }
 
   // Переход на следующий уровень. Если следующего нет: в демо-режиме — снова

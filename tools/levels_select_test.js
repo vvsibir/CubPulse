@@ -1,11 +1,11 @@
-// Тест экрана выбора уровней (levels.html):
+// Тест экрана выбора уровней (index.html):
 // карточки 1..20 строятся из реестра GM_LEVELS (level-1..20.js подключены
 // ЯВНЫМИ тегами, без авто-пробы level-21/22 — иначе в консоли 404-ошибки)
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..') + '/';
 
-const html = fs.readFileSync(root + 'levels.html', 'utf8');
+const html = fs.readFileSync(root + 'index.html', 'utf8');
 const pageScript = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 
 // Все уровни level-1.js .. level-20.js (сортируем по номеру)
@@ -53,7 +53,7 @@ const check = (name, fn) => {
   catch (e) { failures++; console.log(' FAIL ' + name + ' -> ' + e.message); }
 };
 
-check('levels.html подключает level-1..20.js явными тегами по порядку (без авто-пробы)', () => {
+check('index.html подключает level-1..20.js явными тегами по порядку (без авто-пробы)', () => {
   const srcs = [...html.matchAll(/<script src="(level-\d+\.js)"><\/script>/g)].map((m) => m[1]);
   if (srcs.length !== levelCount) throw new Error('тегов уровней: ' + srcs.length + ', ждали ' + levelCount);
   for (let i = 0; i < levelCount; i++) {
