@@ -394,16 +394,16 @@ check('i18n: win.complete и levelName переведены (ru: «УРОВЕН�
   window.GM_I18N.setLang('ru');
 });
 
-check('«Следующий» с уровня 3 ведёт на 4, с последнего (20) — на экран выбора уровней', () => {
+check('«Следующий» с уровня 3 ведёт на 4, с последнего (40) — на экран выбора уровней', () => {
   const g = boot('?level=3');
   menuBtns['#btn-next'].click();
   if (global.window.location.href !== 'gm-1.html?level=4') {
     throw new Error('next с уровня 3: ' + global.window.location.href);
   }
-  const g20 = boot('?level=20');
+  const g40 = boot('?level=40');
   menuBtns['#btn-next'].click();
   if (global.window.location.href !== 'index.html') {
-    throw new Error('next с уровня 20: ' + global.window.location.href);
+    throw new Error('next с уровня 40: ' + global.window.location.href);
   }
 });
 
@@ -422,10 +422,10 @@ check('mode из запроса не сбрасывается: следующи�
   }
 
   // Последний уровень (нет следующего): в демо-режиме замыкаем на первый
-  const g20 = boot('?level=20&mode=demo');
+  const g40 = boot('?level=40&mode=demo');
   menuBtns['#btn-next'].click();
   if (global.window.location.href !== 'gm-1.html?level=1&mode=demo') {
-    throw new Error('next с уровня 20 и mode=demo: ' + global.window.location.href);
+    throw new Error('next с уровня 40 и mode=demo: ' + global.window.location.href);
   }
 
   // Произвольный mode (не только demo) тоже пробрасывается
@@ -436,7 +436,7 @@ check('mode из запроса не сбрасывается: следующи�
   }
 });
 
-check('демо-режим: после победы — переход на следующий уровень, после 20-го — на первый', () => {
+check('демо-режим: после победы — переход на следующий уровень, после 40-го — на первый', () => {
   // Победа на уровне 1 в демо: короткая пауза для салюта (1.8 с) → nextLevel → уровень 2
   const g1 = boot('?level=1&mode=demo');
   g1.state = 'won';
@@ -446,13 +446,13 @@ check('демо-режим: после победы — переход на сл
     throw new Error('демо: победа на 1 не ведёт на 2: ' + global.window.location.href);
   }
 
-  // Победа на последнем (20) в демо: зацикливаемся на первый
-  const g20 = boot('?level=20&mode=demo');
-  g20.state = 'won';
-  g20.wonAt = g20.time - 3;
-  g20.update(1 / 60);
+  // Победа на последнем (40) в демо: зацикливаемся на первый
+  const g40 = boot('?level=40&mode=demo');
+  g40.state = 'won';
+  g40.wonAt = g40.time - 3;
+  g40.update(1 / 60);
   if (global.window.location.href !== 'gm-1.html?level=1&mode=demo') {
-    throw new Error('демо: победа на 20 не ведёт на 1: ' + global.window.location.href);
+    throw new Error('демо: победа на 40 не ведёт на 1: ' + global.window.location.href);
   }
 });
 
@@ -550,30 +550,40 @@ check('каждый уровень подключает свою музыкал�
   if (g1.sound._chords === g3.sound._chords) throw new Error('музыка ур.1 и ур.3 одинакова');
 });
 
-check('новые уровни 4 и 20: своя процедурная мелодия и палитра', () => {
+check('новые уровни 4, 20 и 40: своя процедурная мелодия и палитра', () => {
   const gc = boot('?level=2'); // классика для сравнения
   const g4 = boot('?level=4');
   const g20 = boot('?level=20');
+  const g40 = boot('?level=40');
   if (g4.level.id !== 4) throw new Error('id4=' + g4.level.id);
   if (g20.level.id !== 20) throw new Error('id20=' + g20.level.id);
+  if (g40.level.id !== 40) throw new Error('id40=' + g40.level.id);
   // геометрия: финиш-ворота на length-400
   const f4 = g4.level.objects.find((o) => o.type === 'finish');
   const f20 = g20.level.objects.find((o) => o.type === 'finish');
+  const f40 = g40.level.objects.find((o) => o.type === 'finish');
   if (!f4 || f4.x !== g4.level.length - 400) throw new Error('финиш ур.4: ' + (f4 && f4.x) + ' длина ' + g4.level.length);
   if (!f20 || f20.x !== g20.level.length - 400) throw new Error('финиш ур.20: ' + (f20 && f20.x));
-  // музыка: aurora 284 BPM (ускоренный бит 2x), rainbow 145 BPM — не классика и не друг друга
+  if (!f40 || f40.x !== g40.level.length - 400) throw new Error('финиш ур.40: ' + (f40 && f40.x));
+  // музыка: aurora 284 BPM (ускоренный бит 2x), rainbow 145 BPM, ultra 190 BPM — не классика и не друг друга
   if (Math.abs(g4.sound._stepDur - 60 / 284 / 4) > 1e-9) throw new Error('темп ур.4: ' + g4.sound._stepDur);
   if (Math.abs(g20.sound._stepDur - 60 / 145 / 4) > 1e-9) throw new Error('темп ур.20: ' + g20.sound._stepDur);
+  if (Math.abs(g40.sound._stepDur - 60 / 190 / 4) > 1e-9) throw new Error('темп ур.40: ' + g40.sound._stepDur);
   if (g4.sound._chords === gc.sound._chords) throw new Error('музыка ур.4 = классике');
   if (g20.sound._chords === gc.sound._chords) throw new Error('музыка ур.20 = классике');
+  if (g40.sound._chords === gc.sound._chords) throw new Error('музыка ур.40 = классике');
   if (g4.sound._chords === g20.sound._chords) throw new Error('музыка ур.4 и ур.20 одинакова');
-  // палитры: «Аврора» и «Радуга»
-  const t4 = g4._theme().c, t20 = g20._theme().c;
+  if (g40.sound._chords === g20.sound._chords) throw new Error('музыка ур.40 и ур.20 одинакова');
+  // палитры: «Аврора», «Радуга» и «Ультра»
+  const t4 = g4._theme().c, t20 = g20._theme().c, t40 = g40._theme().c;
   if (t4.playerA !== '#7dffb0') throw new Error('ур.4 playerA: ' + t4.playerA);
   if (t4.spike !== '#ff6b6b') throw new Error('ур.4 spike: ' + t4.spike);
   if (t20.playerA !== '#ff9e9e') throw new Error('ур.20 playerA: ' + t20.playerA);
   if (t20.ground !== '#ffe08f') throw new Error('ур.20 ground: ' + t20.ground);
+  if (t40.playerA !== '#d6b3ff') throw new Error('ур.40 playerA: ' + t40.playerA);
+  if (t40.ground !== '#b37fff') throw new Error('ур.40 ground: ' + t40.ground);
   if (t4.playerA === t20.playerA) throw new Error('палитры ур.4 и ур.20 совпадают');
+  if (t40.playerA === t20.playerA) throw new Error('палитры ур.40 и ур.20 совпадают');
 });
 
 check('уровень 17: musicSpeed=2 ускоряет темп, мелодия продолжена (128 шагов), шипы под низкими платформами', () => {
@@ -634,10 +644,11 @@ check('рисование игрока и финиша использует цв
   if (g1._theme().c.ground === g3._theme().c.ground) throw new Error('цвета земли ур.1 и ур.3 совпадают');
 });
 
-check('демо-бот: все уровни 1-20 проходятся с первой попытки (mode=demo)', () => {
+check('демо-бот: все уровни 1-40 проходятся с первой попытки (mode=demo)', () => {
   // Единственный честный оракул проходимости — реальный бот (BFS-зонд ненадёжен).
   // Уровни 5, 7, 9, 11, 13, 16, 19 отремонтированы в tools/gen_levels.js по правилам
   // «шип в коридоре запуска / кармане приземления» (см. ремонт-блоки в билде).
+  // Уровни 21-40 проверены тем же ботом при разработке генератора.
   const ids = [1, 2, 3].concat(levelFiles.map((f) => parseInt(f.match(/\d+/)[0])).sort((a, b) => a - b));
   const bad = [];
   for (const id of ids) {

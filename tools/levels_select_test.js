@@ -1,6 +1,6 @@
 // Тест экрана выбора уровней (index.html):
-// карточки 1..20 строятся из реестра GM_LEVELS (level-1..20.js подключены
-// ЯВНЫМИ тегами, без авто-пробы level-21/22 — иначе в консоли 404-ошибки)
+// карточки 1..40 строятся из реестра GM_LEVELS (level-1..40.js подключены
+// ЯВНЫМИ тегами, без авто-пробы level-41/42 — иначе в консоли 404-ошибки)
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..') + '/';
@@ -8,11 +8,11 @@ const root = path.join(__dirname, '..') + '/';
 const html = fs.readFileSync(root + 'index.html', 'utf8');
 const pageScript = html.match(/<script id="levels-app">([\s\S]*?)<\/script>/)[1];
 
-// Все уровни level-1.js .. level-20.js (сортируем по номеру)
+// Все уровни level-1.js .. level-40.js (сортируем по номеру)
 const levelFiles = fs.readdirSync(root)
   .filter((f) => /^level-\d+\.js$/.test(f))
   .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
-if (levelFiles.length !== 20) throw new Error('ожидалось 20 файлов уровней, найдено: ' + levelFiles.length);
+if (levelFiles.length !== 40) throw new Error('ожидалось 40 файлов уровней, найдено: ' + levelFiles.length);
 const levelCount = levelFiles.length;
 
 /* --- Мок DOM --- */
@@ -41,7 +41,7 @@ eval(fs.readFileSync(root + 'i18n.js', 'utf8'));
 for (const f of levelFiles) {
   eval(fs.readFileSync(root + f, 'utf8'));
 }
-if (!global.window.GM_LEVELS['1'] || !global.window.GM_LEVELS['20']) {
+if (!global.window.GM_LEVELS['1'] || !global.window.GM_LEVELS['40']) {
   throw new Error('уровни не зарегистрировались');
 }
 
@@ -54,18 +54,18 @@ const check = (name, fn) => {
   catch (e) { failures++; console.log(' FAIL ' + name + ' -> ' + e.message); }
 };
 
-check('index.html подключает level-1..20.js явными тегами по порядку (без авто-пробы)', () => {
+check('index.html подключает level-1..40.js явными тегами по порядку (без авто-пробы)', () => {
   const srcs = [...html.matchAll(/<script src="(level-\d+\.js)"><\/script>/g)].map((m) => m[1]);
   if (srcs.length !== levelCount) throw new Error('тегов уровней: ' + srcs.length + ', ждали ' + levelCount);
   for (let i = 0; i < levelCount; i++) {
     if (srcs[i] !== 'level-' + (i + 1) + '.js') throw new Error('тег ' + (i + 1) + ': ' + srcs[i]);
   }
-  if (!pageScript.includes('id <= 20') || pageScript.includes('probe')) {
+  if (!pageScript.includes('id <= 40') || pageScript.includes('probe')) {
     throw new Error('авто-проба не удалена из скрипта');
   }
 });
 
-check('карточки 1..20 строятся сразу на этапе скрипта (без поиска level-21)', () => {
+check('карточки 1..40 строятся сразу на этапе скрипта (без поиска level-41)', () => {
   if (wrap.children.length !== levelCount) throw new Error('карточек: ' + wrap.children.length);
   const nums = wrap.children.map((c) => Number(c.href.match(/level=(\d+)/)[1]));
   for (let i = 0; i < nums.length; i++) {

@@ -118,12 +118,32 @@
 <script src="level-18.js"></script>
 <script src="level-19.js"></script>
 <script src="level-20.js"></script>
+<script src="level-21.js"></script>
+<script src="level-22.js"></script>
+<script src="level-23.js"></script>
+<script src="level-24.js"></script>
+<script src="level-25.js"></script>
+<script src="level-26.js"></script>
+<script src="level-27.js"></script>
+<script src="level-28.js"></script>
+<script src="level-29.js"></script>
+<script src="level-30.js"></script>
+<script src="level-31.js"></script>
+<script src="level-32.js"></script>
+<script src="level-33.js"></script>
+<script src="level-34.js"></script>
+<script src="level-35.js"></script>
+<script src="level-36.js"></script>
+<script src="level-37.js"></script>
+<script src="level-38.js"></script>
+<script src="level-39.js"></script>
+<script src="level-40.js"></script>
 <script src="i18n.js"></script>
 <script id="levels-app">
 /* =========================================================
-   Экран выбора уровней. Карточки 1..20 строятся из реестра
-   window.GM_LEVELS (level-1.js..level-20.js подключены явными
-   тегами выше). Авто-пробы level-21 и дальше нет — в консоли
+   Экран выбора уровней. Карточки 1..40 строятся из реестра
+   window.GM_LEVELS (level-1.js..level-40.js подключены явными
+   тегами выше). Авто-пробы level-41 и дальше нет — в консоли
    не будет 404-ошибок для несуществующих файлов.
    ========================================================= */
 (function () {
@@ -174,7 +194,7 @@
     const status = document.getElementById('status');
     const frag = document.createDocumentFragment();
     let built = 0;
-    for (let id = 1; id <= 20; id++) {
+    for (let id = 1; id <= 40; id++) {
       const L = root.GM_LEVELS[id];
       if (!L) continue; // файл level-N.js отсутствует — карточку пропускаем
       frag.appendChild(buildCard(id, L));

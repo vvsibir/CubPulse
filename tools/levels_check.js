@@ -1,8 +1,8 @@
 /* =========================================================
    Зеркало логики index.html (для быстрой проверки в браузере).
-   Карточки 1..20 строятся из реестра window.GM_LEVELS; эти же
-   уровни в index.html подключаются ЯВНЫМИ тегами level-1..20.js
-   (авто-пробы level-21/22 нет — чтобы не было 404 в консоли).
+   Карточки 1..40 строятся из реестра window.GM_LEVELS; эти же
+   уровни в index.html подключаются ЯВНЫМИ тегами level-1..40.js
+   (авто-пробы level-41/42 нет — чтобы не было 404 в консоли).
    В node-окружении падает (нет window) — только для браузера.
    ========================================================= */
 (function () {
@@ -51,7 +51,7 @@
     const status = document.getElementById('status');
     const frag = document.createDocumentFragment();
     let built = 0;
-    for (let id = 1; id <= 20; id++) {
+    for (let id = 1; id <= 40; id++) {
       const L = root.GM_LEVELS[id];
       if (!L) continue; // файл level-N.js отсутствует — карточку пропускаем
       frag.appendChild(buildCard(id, L));

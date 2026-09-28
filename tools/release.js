@@ -2,7 +2,7 @@
    РЕЛИЗ-СКРИПТ: сборка папки Release
    ---------------------------------------------------------
    - копирует ТОЛЬКО нужные для игры файлы:
-       gm-1.html, index.html, i18n.js, game.js, level-1.js..level-20.js
+       gm-1.html, index.html, i18n.js, game.js, level-1.js..level-40.js
    - из каждого файла удаляет ВСЕ комментарии:
        JS : построчные // и блочные (вне строк и шаблонов)
        HTML : комментарии разметки и внутри inline-<script>
@@ -18,7 +18,7 @@ const { spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
 const releaseDir = path.join(root, 'Release');
-const LEVEL_COUNT = 20;
+const LEVEL_COUNT = 40;
 
 /* --- Список нужных файлов --- */
 const files = ['gm-1.html', 'index.html', 'i18n.js', 'game.js'];

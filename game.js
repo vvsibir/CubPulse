@@ -264,7 +264,7 @@ const MUSIC = {
 const CHORDS = MUSIC.classic.chords;
 
 // ---------------------------------------------------------
-// Процедурные музыкальные темы для уровней 4-20.
+// Процедурные музыкальные темы для уровней 4-40.
 // makeMusic строит 4-аккордный луп из параметров: темп, тоника (миди),
 // лад, последовательность ступеней, вариант арпеджио и мелодии.
 // ---------------------------------------------------------
@@ -308,7 +308,7 @@ function makeMusic(bpm, root, mode, degrees, arpPat, melPat, melPat2) {
   return { bpm, chords, steps: chords.length * 16 };
 }
 
-// Рецепты тем уровней 4-20 (тоника в диапазоне A2..F3, все лады и темпы разные)
+// Рецепты тем уровней 4-40 (тоника в диапазоне A2..F3, все лады и темпы разные)
 const MUSIC_RECIPES = [
   { key: 'aurora',   bpm: 284, root: 45, mode: 'minor', deg: [0,3,5,4], arp: 0, mel: 0 }, // уровень 4: ускоренный бит (2x)
   { key: 'lava',     bpm: 150, root: 48, mode: 'major', deg: [0,4,5,3], arp: 1, mel: 2 },
@@ -327,6 +327,26 @@ const MUSIC_RECIPES = [
   { key: 'mint',     bpm: 131, root: 52, mode: 'minor', deg: [0,5,4,6], arp: 0, mel: 3 },
   { key: 'slate',    bpm: 127, root: 50, mode: 'minor', deg: [0,3,5,4], arp: 2, mel: 0 },
   { key: 'rainbow',  bpm: 145, root: 53, mode: 'minor', deg: [0,4,5,3], arp: 0, mel: 2 },
+  { key: 'sapphire', bpm: 124, root: 45, mode: 'minor', deg: [0,3,5,4], arp: 0, mel: 1 },
+  { key: 'typhoon',  bpm: 156, root: 47, mode: 'major', deg: [0,4,5,3], arp: 1, mel: 2 },
+  { key: 'garnet',   bpm: 158, root: 48, mode: 'minor', deg: [0,5,3,6], arp: 2, mel: 0 },
+  { key: 'platinum', bpm: 160, root: 50, mode: 'major', deg: [0,3,4,3], arp: 3, mel: 2 },
+  { key: 'amber',    bpm: 154, root: 48, mode: 'minor', deg: [0,6,3,5], arp: 0, mel: 3 },
+  { key: 'azure',    bpm: 162, root: 45, mode: 'major', deg: [0,4,5,0], arp: 1, mel: 0 },
+  { key: 'basalt',   bpm: 164, root: 50, mode: 'minor', deg: [0,3,4,5], arp: 2, mel: 1 },
+  { key: 'rose',     bpm: 166, root: 48, mode: 'major', deg: [0,5,6,3], arp: 3, mel: 2 },
+  { key: 'ash',      bpm: 168, root: 45, mode: 'minor', deg: [0,5,3,5], arp: 1, mel: 3 },
+  { key: 'topaz',    bpm: 170, root: 47, mode: 'major', deg: [0,3,0,5], arp: 0, mel: 2 },
+  { key: 'cobalt',   bpm: 172, root: 48, mode: 'minor', deg: [0,5,4,6], arp: 2, mel: 1 },
+  { key: 'mars',     bpm: 174, root: 50, mode: 'major', deg: [0,3,5,4], arp: 3, mel: 0 },
+  { key: 'arctic',   bpm: 176, root: 45, mode: 'minor', deg: [0,4,5,6], arp: 0, mel: 3 },
+  { key: 'thunder',  bpm: 178, root: 47, mode: 'major', deg: [0,5,4,3], arp: 1, mel: 1 },
+  { key: 'quartz',   bpm: 180, root: 48, mode: 'minor', deg: [0,6,5,3], arp: 2, mel: 0 },
+  { key: 'smalt',    bpm: 182, root: 50, mode: 'major', deg: [0,4,3,5], arp: 3, mel: 2 },
+  { key: 'citrus',   bpm: 184, root: 45, mode: 'minor', deg: [0,3,6,3], arp: 0, mel: 1 },
+  { key: 'nocturne', bpm: 186, root: 47, mode: 'major', deg: [0,5,3,4], arp: 2, mel: 3 },
+  { key: 'flamingo', bpm: 188, root: 48, mode: 'minor', deg: [0,4,5,3], arp: 3, mel: 0 },
+  { key: 'ultra',    bpm: 190, root: 50, mode: 'major', deg: [0,3,4,5], arp: 1, mel: 2 },
 ];
 for (const r of MUSIC_RECIPES) {
   MUSIC[r.key] = makeMusic(r.bpm, r.root, r.mode, r.deg, r.arp, r.mel, r.mel2);
@@ -1169,14 +1189,14 @@ class Game {
   }
 
   // Переход на следующий уровень. Если следующего нет: в демо-режиме — снова
-  // на первый (авто-цикл 1..20 → 1), иначе — на экран выбора уровней
+  // на первый (авто-цикл 1..40 → 1), иначе — на экран выбора уровней
   nextLevel() {
     const next = this.level.id + 1;
     const hasNext = window.GM_LEVELS && window.GM_LEVELS[String(next)];
     if (hasNext) {
       window.location.href = 'gm-1.html?level=' + next + this._modeQs();
     } else if (this.demo) {
-      window.location.href = 'gm-1.html?level=1' + this._modeQs(); // после 20-го — первый
+      window.location.href = 'gm-1.html?level=1' + this._modeQs(); // после 40-го — первый
     } else {
       window.location.href = this._selectPage();
     }
@@ -1328,7 +1348,7 @@ class Game {
     }
 
     // Демо-режим: зацикливаемся — после смерти рестарт, после победы короткая
-    // пауза для салюта и переход на следующий уровень (после 20-го — на первый)
+    // пауза для салюта и переход на следующий уровень (после 40-го — на первый)
     if (this.demo) {
       if (this.state === 'dead' && this.deathTimer > 0.45) this.restart();
       else if (this.state === 'won' && this.time - this.wonAt > 1.8) this.nextLevel();
