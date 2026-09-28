@@ -13,12 +13,12 @@ HTML5-клон CubPulse, **single-file-free**: нет внешних файло�
 | `game.js` | Движок + вся музыка/SFX (секции BPM→MUSIC→Sound→Game) |
 | `i18n.js` | Локализация (2.14): язык от SDK Яндекс.Игр (ru/en), тексты `GM_I18N.t()` |
 | `gm-1.html` | Игра (канвас + оверлеи `#menu`, `#overlay-ready`, ...); подключает level-1..40.js и game.js |
-| `index.html` | Экран выбора уровня |
+| `index.html` | Экран выбора уровня (4 карточки в ряд, 10 страниц в `#pager`; скейлинг под экран) |
 | `level-1.js` … `level-40.js` | Уровни; **`level-4.js`…`level-40.js` генерируемые** |
 | `tools/gen_levels.js` | Детерминированный генератор уровней 4-40 (seed `id*7919+13`) + валидатор достижимости; содержит «добивку хвоста» (коммит 4330c71) |
 | `tools/sound_test.js` | Тесты Sound (18 проверок) |
 | `tools/game_input_test.js` | Интеграция: ввод, меню, темы, шипы ур.17, демо-бот по всем 40 уровням (32+проверок) |
-| `tools/levels_select_test.js` | Экран выбора (8 проверок) |
+| `tools/levels_select_test.js` | Экран выбора: теги 1..40 без авто-пробы, пагинация 4 на страницу (10 страниц) и переходы ‹/›/номер, `?mode=` (11 проверок) |
 | `tools/serve.js` | Локальный сервер: `node tools/serve.js` → http://localhost:8097 |
 | `tools/README.md` | Описание инструментов (обязятельно читать) |
 | `tools/sound_test.js`, `tools/game_input_test.js` | моки DOM/Audio; тесты вырезают из `game.js` секцию от `const BPM = 138` до `class Game {` |
@@ -28,8 +28,8 @@ HTML5-клон CubPulse, **single-file-free**: нет внешних файло�
 - **Браузер к сессии, как правило, НЕ подключён** — на слух/глаз ничего не проверить.
   Приёмка только:
   1. `node --check game.js`
-  2. `node tools/sound_test.js && node tools/game_input_test.js && node tools/levels_select_test.js`
-     (сейчас: 18 + 32 + 8 = 58 OK, все зелёные)
+2. `node tools/sound_test.js && node tools/game_input_test.js && node tools/levels_select_test.js`
+   (сейчас: 18 + 32 + 11 = 61 OK, все зелёные)
 - Ручная проверка в браузере (если появится): `node tools/serve.js`.
 - Синхронные копии инструментов держатся в рабочем кеше сессии — обновлять после правок
   (иначе в сообщениях отстают).
@@ -176,6 +176,6 @@ f29512e Game over: кнопка «Заново» убрана, рестарт т
    задуманный файл, `git diff` ровно тот.
 4. Обновить/добавить проверки в `tools/game_input_test.js` или `tools/sound_test.js`.
 5. `node --check game.js` + все три теста — должны быть зелёными
-   (сейчас: sound 18, input 32, select 8).
+   (сейчас: sound 18, input 32, select 11).
 6. **Не коммитить**, пока пользователь не скажет «закомить» (он любит сначала послушать).
 7. По команде — коммит (смысловыми порциями) + сразу `git push origin main`.

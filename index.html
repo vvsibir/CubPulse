@@ -7,8 +7,9 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
-    width: 100%; min-height: 100%;
+    width: 100%; height: 100%;
     background: #0b0b1a;
+    overflow: hidden; /* без системной прокрутки: всё умещается в экран */
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #fff;
     user-select: none;
@@ -17,28 +18,39 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
+    display: flex;
+    flex-direction: column;
     background:
       radial-gradient(1200px 600px at 20% -10%, rgba(0, 200, 255, 0.14), transparent 60%),
       radial-gradient(1000px 500px at 90% 110%, rgba(255, 224, 102, 0.10), transparent 60%),
       #0b0b1a;
-    padding: 40px 16px 60px;
   }
   header {
+    flex: 0 0 auto;
     text-align: center;
-    margin-bottom: 36px;
+    padding-top: 18px;
+    margin-bottom: 14px;
   }
   h1 {
-    font-size: 42px;
+    font-size: 38px;
     letter-spacing: 1px;
     text-shadow: 0 0 24px rgba(0, 200, 255, 0.45);
   }
-  #levels {
+  /* Зона сетки: занимает всё место между шапкой и пагинатором, центрирует карточки */
+  #stage {
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    align-items: center;
     justify-content: center;
-    max-width: 1100px;
-    margin: 0 auto;
+  }
+  #levels {
+    display: grid;
+    grid-template-columns: repeat(4, 260px);
+    gap: 24px;
+    justify-content: center;
+    align-content: center;
+    transform-origin: center;
   }
   .card {
     width: 260px;
@@ -87,6 +99,41 @@
     color: rgba(255, 255, 255, 0.65);
     font-size: 16px;
   }
+  /* Пагинация: страницы карточек (вместо системной прокрутки — требование 1.10.2).
+     Прижата к низу страницы: footer-зона flex-колонки, не уезжает за край. */
+  #pager {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px 22px;
+  }
+  .page-btn {
+    min-width: 46px;
+    padding: 10px 6px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .page-btn:hover:not(:disabled):not(.page-btn--active) {
+    background: rgba(0, 200, 255, 0.22);
+    border-color: rgba(0, 200, 255, 0.7);
+    box-shadow: 0 0 18px rgba(0, 200, 255, 0.45);
+  }
+  .page-btn--active {
+    background: rgba(0, 200, 255, 0.22);
+    border-color: rgba(0, 200, 255, 0.85);
+    box-shadow: 0 0 14px rgba(0, 200, 255, 0.4);
+  }
+  .page-btn:disabled { opacity: 0.35; cursor: default; }
 </style>
 </head>
 <body>
@@ -95,7 +142,10 @@
   <h1>CubPulse</h1>
 </header>
 
-<div id="levels"></div>
+<div id="stage">
+  <div id="levels"></div>
+</div>
+<div id="pager"></div>
 <div id="status"></div>
 
 <script src="level-1.js"></script>
@@ -145,6 +195,7 @@
    window.GM_LEVELS (level-1.js..level-40.js подключены явными
    тегами выше). Авто-пробы level-41 и дальше нет — в консоли
    не будет 404-ошибок для несуществующих файлов.
+   Пагинация: по PER_PAGE карточек на страницу (страницы в #pager).
    ========================================================= */
 (function () {
   'use strict';
@@ -155,8 +206,16 @@
   // Скорость игрока (CONFIG.SPEED) — только для показа «секунд прохождения»
   const SPEED = 480;
 
+  // Карточек на страницу (4 в ряд × 1 ряд; 40 уровней → 10 страниц).
+  // Сетка масштабируется под экран (resize), пагинация прижата к низу.
+  // Собственная пагинация вместо системной прокрутки (требование 1.10.2)
+  const PER_PAGE = 4;
+
   // Режим из URL (?mode=...): пробрасывается в ссылки уровней, чтобы не сбрасываться
   const MODE = new URLSearchParams(window.location.search).get('mode') || '';
+
+  // Текущая страница (0-based); переживает пересборку при смене языка
+  let page = 0;
 
   // Имена полных тем на выбор уровней: строковая ссылка level.theme.
   // Зеркало THEMES из game.js — здесь нужны только имена для карточек.
@@ -167,6 +226,13 @@
     if (typeof t === 'string') return THEME_NAMES[t] || '';
     return t.name || '';
   }
+
+  function levelIds() {
+    const ids = [];
+    for (let id = 1; id <= 40; id++) if (root.GM_LEVELS[id]) ids.push(id);
+    return ids;
+  }
+  function pageCount(n) { return Math.max(1, Math.ceil(n / PER_PAGE)); }
 
   function buildCard(id, L) {
     const hue1 = (L.bg && L.bg.start !== undefined) ? L.bg.start : 220;
@@ -189,26 +255,70 @@
     return a;
   }
 
+  function renderPager(pager, cur, total) {
+    const btn = (label, active, disabled, on) => {
+      const b = document.createElement('button');
+      b.className = 'page-btn' + (active ? ' page-btn--active' : '');
+      b.innerHTML = label;
+      b.disabled = disabled;
+      if (on) b.addEventListener('click', on);
+      return b;
+    };
+    pager.textContent = '';
+    pager.appendChild(btn('‹', false, cur === 0, () => { page = cur - 1; render(); }));
+    for (let i = 0; i < total; i++) {
+      pager.appendChild(btn(String(i + 1), i === cur, i === cur, () => { page = i; render(); }));
+    }
+    pager.appendChild(btn('›', false, cur === total - 1, () => { page = cur + 1; render(); }));
+  }
+
   function render() {
     const wrap = document.getElementById('levels');
     const status = document.getElementById('status');
-    const frag = document.createDocumentFragment();
-    let built = 0;
-    for (let id = 1; id <= 40; id++) {
-      const L = root.GM_LEVELS[id];
-      if (!L) continue; // файл level-N.js отсутствует — карточку пропускаем
-      frag.appendChild(buildCard(id, L));
-      built++;
-    }
-    if (built === 0) {
+    const pager = document.getElementById('pager');
+    const ids = levelIds();
+
+    if (ids.length === 0) {
       status.textContent = window.GM_I18N ? window.GM_I18N.t('card.notFound') : 'Уровни не найдены';
       return;
     }
-    wrap.appendChild(frag);
+
+    const total = pageCount(ids.length);
+    if (page >= total) page = total - 1;
+
+    wrap.textContent = '';
+    const from = page * PER_PAGE;
+    const to = Math.min(from + PER_PAGE, ids.length);
+    for (let i = from; i < to; i++) {
+      wrap.appendChild(buildCard(ids[i], root.GM_LEVELS[ids[i]]));
+    }
+
+    renderPager(pager, page, total);
   }
 
   window.GM_SELECT_RENDER = render; // пересборка карточек после смены языка (SDK)
+
+  // Масштабирование сетки под экран: карточки не уползают за край, пагинация всегда внизу.
+  // Трансформ не влияет на раскладку (flex-центр #stage), поэтому ничего не перекрывается.
+  function resize() {
+    const stage = document.getElementById('stage');
+    const lv = document.getElementById('levels');
+    if (!stage || !lv) return;
+    const W = lv.offsetWidth;
+    const H = lv.offsetHeight;
+    if (!W || !H) return;
+    const sw = window.innerWidth - 32;
+    const sh = window.innerHeight - 32;
+    const scale = Math.min(1, sw / W, sh / H);
+    stage.style.transform = scale === 1 ? '' : 'scale(' + scale + ')';
+  }
+  if (window.addEventListener) {
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', resize);
+  }
+
   render();
+  resize();
 })();
 </script>
 <script>
