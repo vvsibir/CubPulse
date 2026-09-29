@@ -30,7 +30,20 @@ const CONFIG = {
   // ROTATION_SPEED = 6.28 / 0.643 ≈ 9.77
   ROTATION_SPEED: 9.77,
 
+  // Вращение персонажа в прыжке (кувырок): пока выключено — маска-бегун
+  // не обязана вращаться. Флаг оставлен, чтобы вернуть кувырок одной строкой.
+  ROTATE: false,
+
   PARTICLE_LIFE: 0.6,
+
+  // Анимированная маска персонажа: sources/run.png — спрайт-лист 480x60
+  // (8 кадров бегущего человечка по 60x60, фон прозрачный). Силуэт кадра
+  // вырезает (destination-in) градиент темы уровня — персонаж сохраняет
+  // неоновые цвета, но становится бегуном, а не кубиком. Кадры нарезаются
+  // вертикально: frame i = источник x∈[i*60, (i+1)*60).
+  RUN_SPRITE: 'run.png',
+  RUN_FRAME_PX: 40,   // смена кадра бега каждые 40 px пути (≈ 12 кадров/с)
+  RUN_FRAMES: 8,      // всего кадров в листе
 };
 
 /* =========================================================
@@ -87,17 +100,20 @@ class Player {
     if (this.vy > CONFIG.MAX_FALL) this.vy = CONFIG.MAX_FALL;
     this.y += this.vy * dt;
 
-    // Вращение — по ТЕКУЩЕМУ onGround (состояние на начало кадра)
-    if (!this.onGround) {
-      this.rotation += CONFIG.ROTATION_SPEED * dt;
-    } else {
-      const quarter = Math.PI / 2;
-      const target = Math.round(this.rotation / quarter) * quarter;
-      const diff = target - this.rotation;
-      if (Math.abs(diff) < 0.01) {
-        this.rotation = target;
+    // Вращение — по ТЕКУЩЕМУ onGround (состояние на начало кадра).
+    // Отключается флагом CONFIG.ROTATE (маска-бегун пока не вращается).
+    if (CONFIG.ROTATE) {
+      if (!this.onGround) {
+        this.rotation += CONFIG.ROTATION_SPEED * dt;
       } else {
-        this.rotation += diff * Math.min(1, dt * 20);
+        const quarter = Math.PI / 2;
+        const target = Math.round(this.rotation / quarter) * quarter;
+        const diff = target - this.rotation;
+        if (Math.abs(diff) < 0.01) {
+          this.rotation = target;
+        } else {
+          this.rotation += diff * Math.min(1, dt * 20);
+        }
       }
     }
 
@@ -1015,6 +1031,14 @@ class Game {
     // level.musicSpeed — ускорение мелодии (1 = как в рецепте)
     this.sound.setMusic(this.level.music || this._levelTheme().music, this.level.musicSpeed || 1);
 
+    // Анимированная маска персонажа (sources/run.png, 8 кадров 60x60): грузим
+    // только в браузере — в node-тестах Image нет, персонаж остаётся кубиком.
+    this.runImg = (typeof Image !== 'undefined') ? new Image() : null;
+    if (this.runImg) this.runImg.src = CONFIG.RUN_SPRITE;
+    this._runMaskCv = null;    // оффскрин 60x60 (mask = градиент темы по силуэту кадра)
+    this._runMaskKey = '';     // кэш маски: 'кадр|playerA|playerB'
+    this._runFrameLast = 0;    // последний наземный кадр (заморозка в полёте)
+
     // Управление клавиатурой
     window.addEventListener('keydown', (e) => {
       this.sound.unlock();
@@ -1600,8 +1624,58 @@ class Game {
 
     ctx.save();
     ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
-    ctx.rotate(p.rotation);
+    // Кувырок в прыжке — по флагу CONFIG.ROTATE (сейчас выключен: маска-бегун
+    // без вращения; вернуть можно одной строкой, поставив флаг в true)
+    if (CONFIG.ROTATE) ctx.rotate(p.rotation);
 
+    // Анимированная маска: силуэт бегуна (sources/run.png, 8 кадров 60x60)
+    // залит градиентом темы уровня (destination-in). Пока спрайт не
+    // загрузился (или в node-тестах, где Image нет) — обычный кубик.
+    if (this.runImg && this.runImg.complete && this.runImg.naturalWidth > 0) {
+      const SP_W = this.runImg.naturalWidth / CONFIG.RUN_FRAMES; // 60
+      const SP_H = this.runImg.naturalHeight;                    // 60
+      // Кадры: спрайт нарезан вертикально, кадр i = столбец x∈[i*60, (i+1)*60).
+      // Анимации прыжка в листе пока нет — в полёте замораживаем последний
+      // наземный кадр (this._runFrameLast), чтобы ноги не «бежали» в воздухе.
+      let fi;
+      if (p.onGround) {
+        fi = Math.floor(p.x / CONFIG.RUN_FRAME_PX) % CONFIG.RUN_FRAMES;
+        this._runFrameLast = fi;
+      } else {
+        fi = this._runFrameLast || 0;
+      }
+
+      // кэш: перерисовываем маску только при смене кадра или цветов темы
+      const key = fi + '|' + c.playerA + '|' + c.playerB;
+      if (this._runMaskKey !== key) {
+        if (!this._runMaskCv) {
+          this._runMaskCv = document.createElement('canvas');
+          this._runMaskCv.width = SP_W;
+          this._runMaskCv.height = SP_H;
+        }
+        const m = this._runMaskCv.getContext('2d');
+        m.globalCompositeOperation = 'source-over';
+        m.clearRect(0, 0, SP_W, SP_H);
+        const grad = m.createLinearGradient(0, 0, SP_W, SP_H);
+        grad.addColorStop(0, c.playerA);
+        grad.addColorStop(1, c.playerB);
+        m.fillStyle = grad;
+        m.fillRect(0, 0, SP_W, SP_H);
+        m.globalCompositeOperation = 'destination-in';
+        m.drawImage(this.runImg, fi * SP_W, 0, SP_W, SP_H, 0, 0, SP_W, SP_H);
+        this._runMaskKey = key;
+      }
+
+      // масштаб 60 -> 48 px: ноги силуэта (y≈56 в кадре) встают на низ хитбокса
+      const k = 0.8;
+      ctx.shadowColor = c.playerA;
+      ctx.shadowBlur = 25;
+      ctx.drawImage(this._runMaskCv, -(SP_W * k) / 2, -(SP_H * k) / 2, SP_W * k, SP_H * k);
+      ctx.restore();
+      return;
+    }
+
+    // fallback: кубик без маски (спрайт ещё грузится / среда без Image)
     ctx.shadowColor = c.playerA;
     ctx.shadowBlur = 25;
 

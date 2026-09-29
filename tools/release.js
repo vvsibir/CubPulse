@@ -21,7 +21,7 @@ const releaseDir = path.join(root, 'Release');
 const LEVEL_COUNT = 40;
 
 /* --- Список нужных файлов --- */
-const files = ['gm-1.html', 'index.html', 'i18n.js', 'game.js'];
+const files = ['gm-1.html', 'index.html', 'i18n.js', 'game.js', 'run.png'];
 for (let i = 1; i <= LEVEL_COUNT; i++) files.push('level-' + i + '.js');
 
 /* --- Удаление комментариев из JS-кода ---
@@ -95,6 +95,12 @@ for (const name of files) {
   if (!fs.existsSync(srcPath)) {
     console.error('НЕТ ФАЙЛА: ' + name);
     process.exit(1);
+  }
+  // Бинарные ассеты (спрайт-лист персонажа) копируем как есть
+  if (name.endsWith('.png')) {
+    fs.copyFileSync(srcPath, path.join(releaseDir, name));
+    console.log('  ' + name.padEnd(20) + ' (бинарный файл, копия как есть)');
+    continue;
   }
   const src = fs.readFileSync(srcPath, 'utf8');
   const body = name.endsWith('.html') ? stripHTMLComments(src) : stripJSComments(src);
