@@ -128,7 +128,7 @@ check('карточка нового уровня 4: палитра из bg и �
   if (!c.style.background.includes('hsl(90, 60%, 16%)')) throw new Error('палитра: ' + c.style.background);
   if (!c.innerHTML.includes('тема: Аврора')) throw new Error('тема не показана: ' + c.innerHTML);
   // Длины в карточке больше нет — только время прохождения
-  const sec4 = 'время: ~' + (global.window.GM_LEVELS['4'].length / 480).toFixed(1) + ' сек';
+  const sec4 = 'время: ~' + Math.round(global.window.GM_LEVELS['4'].length / 480) + ' сек';
   if (!c.innerHTML.includes(sec4)) throw new Error('время не показано: ' + c.innerHTML);
   if (c.innerHTML.includes('длина') || c.innerHTML.includes('px')) throw new Error('длина осталась в карточке: ' + c.innerHTML);
 });
@@ -136,7 +136,7 @@ check('карточка нового уровня 4: палитра из bg и �
 check('счётчик объектов и время в карточке', () => {
   const c = wrap.children[0];
   if (!c.innerHTML.includes('объектов: 13')) throw new Error('объектов: ' + c.innerHTML);
-  const sec1 = 'время: ~' + (global.window.GM_LEVELS['1'].length / 480).toFixed(1) + ' сек';
+  const sec1 = 'время: ~' + Math.round(global.window.GM_LEVELS['1'].length / 480) + ' сек';
   if (!c.innerHTML.includes(sec1)) throw new Error('время: ' + c.innerHTML);
   if (c.innerHTML.includes('длина') || c.innerHTML.includes('px')) throw new Error('длина осталась в карточке: ' + c.innerHTML);
 });
