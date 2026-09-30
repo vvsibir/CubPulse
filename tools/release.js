@@ -8,11 +8,12 @@
        HTML : комментарии разметки и внутри inline-<script>
    - проверяет синтаксис каждого выпущенного JS (node --check),
      в т.ч. inline-скриптов из HTML;
-   - упаковывает всё содержимое Release/ в ZIP-архив Release.zip
-     (без внешних зависимостей: zlib + ручная запись ZIP-структуры).
+- упаковывает всё содержимое Release/ в ZIP-архив CubPulse_release.zip:
+      файлы кладутся В КОРЕНЬ архива (без вложенной папки Release/);
+      (без внешних зависимостей: zlib + ручная запись ZIP-структуры).
 
    Запуск:  node tools/release.js
-   Выход:   папка Release/ и архив Release.zip рядом с корнем репозитория
+   Выход:   папка Release/ и архив CubPulse_release.zip рядом с корнем репозитория
    ========================================================= */
 const fs = require('fs');
 const path = require('path');
@@ -264,14 +265,14 @@ for (const name of fs.readdirSync(releaseDir)) {
   const p = path.join(releaseDir, name);
   if (!fs.statSync(p).isFile()) continue;
   zipEntries.push({
-    name: 'Release/' + name,
+    name: name, // файлы прямо в корне архива, без вложенной папки
     data: fs.readFileSync(p),
     mtime: fs.statSync(p).mtime
   });
 }
 zipEntries.sort((a, b) => a.name.localeCompare(b.name));
-const zipPath = path.join(root, 'Release.zip');
+const zipPath = path.join(root, 'CubPulse_release.zip');
 fs.writeFileSync(zipPath, buildZip(zipEntries));
-console.log('Архив:  Release.zip — ' + zipEntries.length + ' файлов, ' +
+console.log('Архив:  CubPulse_release.zip — ' + zipEntries.length + ' файлов, ' +
   fs.statSync(zipPath).size.toLocaleString('ru') +
   ' байт (рядом с Release/, путь: ' + zipPath + ')');

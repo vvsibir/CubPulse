@@ -9,7 +9,7 @@ Desktop.ini
 
 # Релизная сборка (генерируется tools/release.js)
 Release/
-Release.zip
+CubPulse_release.zip
 
 # Исходные ресурсы (спрайты-образцы, jpg/gif/pdn/zip) — в коммит не идут.
 # run.png — единственный задействованный игрой ассет и лежит в корне.
