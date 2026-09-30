@@ -5,6 +5,8 @@
      - 8.2.3: интерфейсные тексты переведены на поддерживаемые
        языки (ru — язык по умолчанию, en — перевод; неизвестный
        код языка → резервный en; вне платформы SDK нет → ru).
+   Названия тем уровней хранятся в level-*.js по-русски;
+   на en они переводятся словарём THEME_EN (см. themeName).
 
    Модуль подключается ДО game.js и inline-скриптов страниц.
    ВАЖНО: без regex-литералов, содержащих «//» (релизный
@@ -59,6 +61,51 @@ window.GM_I18N = (function () {
     },
   };
 
+  // Переводы названий тем уровней: массив пар [ru, en].
+  // Русский — исходное имя в level-*.js; при активном en переводится.
+  var THEME_EN = {
+    'Классика': 'Classic',
+    'Неон-аква': 'Neon Aqua',
+    'Закат': 'Sunset',
+    'Аврора': 'Aurora',
+    'Вулкан': 'Volcano',
+    'Лёд': 'Ice',
+    'Пустыня': 'Desert',
+    'Космос': 'Space',
+    'Лес': 'Forest',
+    'Океан': 'Ocean',
+    'Вишня': 'Cherry',
+    'Золото': 'Gold',
+    'Изумруд': 'Emerald',
+    'Электрик': 'Electric',
+    'Шторм': 'Storm',
+    'Обсидиан': 'Obsidian',
+    'Неон-розовый': 'Neon Pink',
+    'Мята': 'Mint',
+    'Сланец': 'Slate',
+    'Радуга': 'Rainbow',
+    'Сапфир': 'Sapphire',
+    'Тайфун': 'Typhoon',
+    'Гранат': 'Garnet',
+    'Платина': 'Platinum',
+    'Янтарь': 'Amber',
+    'Лазурь': 'Azure',
+    'Базальт': 'Basalt',
+    'Роза': 'Rose',
+    'Пепел': 'Ash',
+    'Топаз': 'Topaz',
+    'Кобальт': 'Cobalt',
+    'Марс': 'Mars',
+    'Арктика': 'Arctic',
+    'Гроза': 'Thunderstorm',
+    'Кварц': 'Quartz',
+    'Смальта': 'Smalt',
+    'Цитрус': 'Citrus',
+    'Ноктюрн': 'Nocturne',
+    'Фламинго': 'Flamingo',
+    'Ультра': 'Ultra',
+  };
+
   function normalize(code) {
     if (!code || typeof code !== 'string') return DEFAULT_LANG;
     var c = code.toLowerCase().split('-')[0];
@@ -105,11 +152,17 @@ window.GM_I18N = (function () {
     getLang: function () { return lang; },
     applyTexts: applyTexts,
     // Имена уровней из level-*.js: «Level N» переводим («Уровень N» / «Level N»),
-    // тематические имена («Аврора», «Закат», ...) — без изменений.
+    // тематические имена («Аврора», «Закат», ...) — через словарь THEME_EN.
     levelName: function (name) {
       if (typeof name !== 'string') return name;
       var m = /^Level (\d+)$/.exec(name);
       if (m) return t('level.name', { n: m[1] });
+      return name;
+    },
+    // Название темы уровня: при en переводится словарём, иначе — как в данных (ru).
+    themeName: function (name) {
+      if (typeof name !== 'string') return name || '';
+      if (lang === 'en' && THEME_EN[name]) return THEME_EN[name];
       return name;
     },
   };

@@ -61,7 +61,9 @@ global.document = {
   createElement() { return makeEl(); },
 };
 
-// Подгружаем реальные i18n.js и level-N.js (зарегистрируют все уровни в реестр)
+// Подгружаем реальные i18n.js и level-N.js (зарегистрируют все уровни в реестр).
+// Язык фиксируем ru, чтобы имена тем проверялись в оригинале.
+global.window.GM_I18N_LANG = 'ru';
 eval(fs.readFileSync(root + 'i18n.js', 'utf8'));
 for (const f of levelFiles) {
   eval(fs.readFileSync(root + f, 'utf8'));
@@ -146,6 +148,20 @@ check('карточка показывает тему уровня; у уров�
   if (!c1.innerHTML.includes('тема: Неон-аква')) throw new Error('тема ур.1 не показана: ' + c1.innerHTML);
   if (!c2.innerHTML.includes('тема: Классика')) throw new Error('тема ур.2 (default) не показана: ' + c2.innerHTML);
   if (c4.innerHTML.includes('тема: Неон-аква')) throw new Error('ур.4 не должен носить тему ур.1: ' + c4.innerHTML);
+});
+
+check('переход на en: названия тем переводятся (Classic, Neon Aqua), карточки собираются', () => {
+  global.window.GM_I18N.setLang('en');
+  eval(pageScript); // пересборка при смене языка (GM_SELECT_RENDER)
+  const c1 = wrap.children[0]; // уровень 1
+  const c2 = wrap.children[1]; // уровень 2 (theme: 'default')
+  if (c1.href !== 'gm-1.html?level=1') throw new Error('href: ' + c1.href);
+  const c4 = wrap.children[3]; // уровень 4
+  if (!c1.innerHTML.includes('theme: Neon Aqua')) throw new Error('тема ур.1 на en: ' + c1.innerHTML);
+  if (!c2.innerHTML.includes('theme: Classic')) throw new Error('тема ур.2 (default) на en: ' + c2.innerHTML);
+  if (!c4.innerHTML.includes('theme: Aurora')) throw new Error('тема ур.4 на en: ' + c4.innerHTML);
+  global.window.GM_I18N.setLang('ru');
+  eval(pageScript); // вернули русский, страница снова 1..4
 });
 
 check('переход кнопкой › на 2-ю страницу (5..8), активна страница 2', () => {

@@ -223,8 +223,9 @@
   function themeName(L) {
     const t = L.theme;
     if (!t) return '';
-    if (typeof t === 'string') return THEME_NAMES[t] || '';
-    return t.name || '';
+    // Имя темы: строка-ссылка на реестр ('default') или inline theme.name
+    const raw = (typeof t === 'string' ? THEME_NAMES[t] || '' : t.name || '');
+    return window.GM_I18N ? window.GM_I18N.themeName(raw) : raw;
   }
 
   function levelIds() {
