@@ -180,104 +180,12 @@ const STEP_DUR = 60 / BPM / 4;  // длительность 16-й ноты (се
 const TOTAL_STEPS = 64;          // базовая длина петли: 4 такта по 16 шагов; тема может задать свою (steps)
 const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
-// Музыкальные темы уровней: прогрессия A-минор (classic — как было),
-// Em–C–G–D (level1), Am–Em–F–G (marathon). Темп свой у каждой.
-const MUSIC = {
-  classic: {
-    bpm: 138,
-    chords: [
-      { // Am
-        bass: midi(45),                              // A2
-        arp:  [midi(57), midi(60), midi(64), midi(69)], // A3 C4 E4 A4
-        pad:  [midi(57), midi(64), midi(69)],
-        mel:  [[0, midi(69)], [4, midi(72)], [8, midi(76)], [12, midi(69)]],
-      },
-      { // F
-        bass: midi(41),                              // F2
-        arp:  [midi(57), midi(60), midi(65), midi(69)], // A3 C4 F4 A4
-        pad:  [midi(57), midi(65), midi(69)],
-        mel:  [[0, midi(69)], [4, midi(72)], [8, midi(77)], [12, midi(72)]],
-      },
-      { // C
-        bass: midi(48),                              // C3
-        arp:  [midi(60), midi(64), midi(67), midi(72)], // C4 E4 G4 C5
-        pad:  [midi(60), midi(64), midi(67)],
-        mel:  [[0, midi(67)], [4, midi(72)], [8, midi(76)], [12, midi(79)]],
-      },
-      { // G
-        bass: midi(43),                              // G2
-        arp:  [midi(59), midi(62), midi(67), midi(71)], // B3 D4 G4 B4
-        pad:  [midi(59), midi(62), midi(67)],
-        mel:  [[0, midi(67)], [4, midi(71)], [8, midi(74)], [12, midi(71)]],
-      },
-    ],
-  },
-
-  // «Неон-аква» — уровень 1: Em–C–G–D, быстрее (140 BPM)
-  level1: {
-    bpm: 140,
-    chords: [
-      { // Em
-        bass: midi(40),                              // E2
-        arp:  [midi(59), midi(64), midi(67), midi(64)], // B3 E4 G4 E4
-        pad:  [midi(64), midi(67), midi(71)],
-        mel:  [[0, midi(71)], [3, midi(67)], [8, midi(71)], [12, midi(76)]],
-      },
-      { // C
-        bass: midi(48),                              // C3
-        arp:  [midi(60), midi(64), midi(67), midi(64)], // C4 E4 G4 E4
-        pad:  [midi(60), midi(64), midi(67)],
-        mel:  [[0, midi(67)], [3, midi(72)], [8, midi(76)], [12, midi(79)]],
-      },
-      { // G
-        bass: midi(43),                              // G2
-        arp:  [midi(62), midi(67), midi(71), midi(67)], // D4 G4 B4 G4
-        pad:  [midi(62), midi(67), midi(71)],
-        mel:  [[0, midi(71)], [3, midi(67)], [8, midi(74)], [12, midi(71)]],
-      },
-      { // D
-        bass: midi(50),                              // D2
-        arp:  [midi(57), midi(62), midi(66), midi(69)], // A3 D4 F#4 A4
-        pad:  [midi(62), midi(66), midi(69)],
-        mel:  [[0, midi(69)], [3, midi(74)], [8, midi(78)], [12, midi(74)]],
-      },
-    ],
-  },
-
-  // «Закат» — уровень 3: Am–Em–F–G, медленнее и «эпичнее» (132 BPM)
-  marathon: {
-    bpm: 132,
-    chords: [
-      { // Am
-        bass: midi(45),                              // A2
-        arp:  [midi(57), midi(64), midi(69), midi(72)], // A3 E4 A4 C5
-        pad:  [midi(57), midi(64), midi(69)],
-        mel:  [[0, midi(72)], [4, midi(76)], [8, midi(81)], [12, midi(76)]],
-      },
-      { // Em
-        bass: midi(40),                              // E2
-        arp:  [midi(59), midi(64), midi(67), midi(71)], // B3 E4 G4 B4
-        pad:  [midi(59), midi(67), midi(71)],
-        mel:  [[0, midi(71)], [4, midi(76)], [8, midi(79)], [12, midi(76)]],
-      },
-      { // F
-        bass: midi(41),                              // F2
-        arp:  [midi(57), midi(65), midi(69), midi(72)], // A3 F4 A4 C5
-        pad:  [midi(57), midi(65), midi(69)],
-        mel:  [[0, midi(72)], [4, midi(77)], [8, midi(81)], [12, midi(77)]],
-      },
-      { // G
-        bass: midi(43),                              // G2
-        arp:  [midi(59), midi(62), midi(67), midi(74)], // B3 D4 G4 D5
-        pad:  [midi(59), midi(67), midi(74)],
-        mel:  [[0, midi(74)], [4, midi(79)], [8, midi(83)], [12, midi(79)]],
-      },
-    ],
-  },
-};
-
-// Псевдоним для обратной совместимости: классическая тема по умолчанию
-const CHORDS = MUSIC.classic.chords;
+// Музыка ВСЕХ уровней 1-40 строится процедурно из рецептов MUSIC_RECIPES
+// (makeMusic), включая первые три ручные темы:
+//   level1    — «Неон-аква» (ур.1): Em–C–G–D, 140 BPM
+//   classic   — «Классика» (ур.2, default): Am–F–C–G, 138 BPM
+//   marathon  — «Закат» (ур.3): Am–Em–F–G, 132 BPM
+const MUSIC = {};
 
 // ---------------------------------------------------------
 // Процедурные музыкальные темы для уровней 4-40.
@@ -324,8 +232,12 @@ function makeMusic(bpm, root, mode, degrees, arpPat, melPat, melPat2) {
   return { bpm, chords, steps: chords.length * 16 };
 }
 
-// Рецепты тем уровней 4-40 (тоника в диапазоне A2..F3, все лады и темпы разные)
+// Рецепты музыкальных тем уровней 1-40 (тоника в диапазоне A2..F3).
+// Первые три — ручные темы (level1/classic/marathon), остальные генерируемые.
 const MUSIC_RECIPES = [
+  { key: 'level1',   bpm: 140, root: 40, mode: 'minor', deg: [0,5,4,6], arp: 0, mel: 0 }, // ур.1 «Неон-аква»: Em–C–G–D
+  { key: 'classic',  bpm: 138, root: 45, mode: 'minor', deg: [0,5,2,6], arp: 0, mel: 0 }, // ур.2 «Классика»: Am–F–C–G
+  { key: 'marathon', bpm: 132, root: 45, mode: 'minor', deg: [0,4,5,6], arp: 0, mel: 0 }, // ур.3 «Закат»: Am–Em–F–G
   { key: 'aurora',   bpm: 284, root: 45, mode: 'minor', deg: [0,3,5,4], arp: 0, mel: 0 }, // уровень 4: ускоренный бит (2x)
   { key: 'lava',     bpm: 150, root: 48, mode: 'major', deg: [0,4,5,3], arp: 1, mel: 2 },
   { key: 'ice',      bpm: 134, root: 48, mode: 'minor', deg: [0,5,3,6], arp: 2, mel: 1 },
@@ -367,6 +279,9 @@ const MUSIC_RECIPES = [
 for (const r of MUSIC_RECIPES) {
   MUSIC[r.key] = makeMusic(r.bpm, r.root, r.mode, r.deg, r.arp, r.mel, r.mel2);
 }
+
+// Псевдоним для обратной совместимости: классическая тема по умолчанию
+const CHORDS = MUSIC.classic.chords;
 
 class Sound {
   constructor() {
