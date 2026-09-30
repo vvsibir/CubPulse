@@ -98,8 +98,8 @@
     { type: 'platform', x: 11952, y: 300, w: 145, h: 20 },
     { type: 'spike', x: 12197, y: 600, w: 40, h: 40 },
     { type: 'block', x: 12397, y: 440, w: 200, h: 40 },
-    { type: 'spike', x: 12447, y: 400, w: 40, h: 40, flip: true },
-    { type: 'spike', x: 12497, y: 400, w: 40, h: 40, flip: true },
+    { type: 'spike', x: 12447, y: 480, w: 40, h: 40, flip: true },
+    { type: 'spike', x: 12497, y: 480, w: 40, h: 40, flip: true },
     { type: 'spike', x: 12684, y: 600, w: 40, h: 40 },
 
       // ---------- следующий этап ----------

@@ -59,8 +59,8 @@
       // --- Коридор с перевёрнутыми шипами ---
       { type: 'spike',    x: 6300, y: 600, w: 40, h: 40 },
       { type: 'block',    x: 6500, y: 440, w: 200, h: 40 },
-      { type: 'spike',    x: 6550, y: 400, w: 40, h: 40, flip: true },
-      { type: 'spike',    x: 6600, y: 400, w: 40, h: 40, flip: true },
+      { type: 'spike',    x: 6550, y: 480, w: 40, h: 40, flip: true },
+      { type: 'spike',    x: 6600, y: 480, w: 40, h: 40, flip: true },
 
       // --- Финальный рывок ---
       { type: 'spike',    x: 7000, y: 600, w: 40, h: 40 },

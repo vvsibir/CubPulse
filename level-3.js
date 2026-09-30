@@ -57,9 +57,9 @@
       // --- Коридор с потолком и шипами сверху ---
       { type: 'spike',    x: 4100, y: 600, w: 40, h: 40 },
       { type: 'block',    x: 4300, y: 440, w: 200, h: 40 },
-      { type: 'spike',    x: 4350, y: 400, w: 40, h: 40, flip: true },
-      { type: 'spike',    x: 4400, y: 400, w: 40, h: 40, flip: true },
-      { type: 'spike',    x: 4450, y: 400, w: 40, h: 40, flip: true },
+      { type: 'spike',    x: 4350, y: 480, w: 40, h: 40, flip: true },
+      { type: 'spike',    x: 4400, y: 480, w: 40, h: 40, flip: true },
+      { type: 'spike',    x: 4450, y: 480, w: 40, h: 40, flip: true },
       { type: 'platform', x: 4650, y: 520, w: 160, h: 20 },
       { type: 'platform', x: 4900, y: 440, w: 160, h: 20 },
       { type: 'platform', x: 5200, y: 520, w: 150, h: 20 },

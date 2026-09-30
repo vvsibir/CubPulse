@@ -56,7 +56,7 @@ const THEMES = {
 };
 
 const spike = (x) => ({ type: 'spike', x: Math.round(x), y: 600, w: 40, h: 40 });
-const fspike = (x) => ({ type: 'spike', x: Math.round(x), y: 400, w: 40, h: 40, flip: true });
+const fspike = (x) => ({ type: 'spike', x: Math.round(x), y: 480, w: 40, h: 40, flip: true }); // свисает под потолком blockC (y=440..480)
 const blockG = (x, y) => ({ type: 'block', x: Math.round(x), y, w: 80, h: 640 - y });
 const blockC = (x) => ({ type: 'block', x: Math.round(x), y: 440, w: 200, h: 40 });
 const plat = (x, y, w) => ({ type: 'platform', x: Math.round(x), y, w: Math.round(w), h: 20 });
