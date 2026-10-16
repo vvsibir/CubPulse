@@ -35,7 +35,7 @@ function makeEl() {
 }
 
 // #levels: коллекция карточек; запись textContent='' очищает страницу.
-// offsetWidth/offsetHeight — номинал сетки 4 в ряд (1112×~520) для resize()
+// offsetWidth/offsetHeight — номинал сетки 4 в ряд (1112×520) для resize()
 const wrap = {
   children: [],
   offsetWidth: 1112,
@@ -48,8 +48,11 @@ const pager = {
   set textContent(v) { if (v === '') this.children = []; },
   appendChild(x) { this.children.push(x); },
 };
-const stage = { style: {} };
+// #stage: flex-остаток между шапкой и пагинатором (700×300) — resize()
+// обязан масштабировать по ЭТОМУ боксу, а не по окну (1280×720)
+const stage = { style: {}, clientWidth: 700, clientHeight: 300 };
 const statusEl = { _text: '', get textContent() { return this._text; }, set textContent(v) { this._text = v; } };
+global.window.getComputedStyle = () => ({ marginTop: '-20px' }); // отрицательный margin сетки
 global.document = {
   getElementById(id) {
     if (id === 'levels') return wrap;
@@ -201,6 +204,51 @@ check('?mode= из URL пробрасывается в ссылки карточ
     if (c.href !== expected) throw new Error('карточка ' + (i + 1) + ': ' + c.href);
   }
   global.window.location.search = '';
+});
+
+check('resize: масштаб по боксу #stage и с учётом margin-top сетки (не по окну)', () => {
+  eval(pageScript); // пересборка с текущими моками (stage 700×300, сетка 1112×520, mt -20)
+  const t = stage.style.transform;
+  if (!/^scale\(/.test(t || '')) {
+    throw new Error('transform не задан: ' + JSON.stringify(t) + ' — scale считается от окна?');
+  }
+  const s = parseFloat(t.replace('scale(', ''));
+  // Нужный габарит по высоте: H - marginTop = 520 + 20 = 540.
+  // Ожидаем ограничение по высоте stage (300/540), а не по окну (720/520 = 1)
+  const expected = 300 / 540;
+  if (Math.abs(s - expected) > 1e-9) {
+    throw new Error('scale=' + s + ', ждали ' + expected + ' (по боксу stage с margin-top)');
+  }
+});
+
+check('узкий вьюпорт (≤559px): 2 карточки на страницу, 20 страниц в пагинаторе', () => {
+  global.window.innerWidth = 480;
+  eval(pageScript);
+  if (wrap.children.length !== 2) throw new Error('карточек: ' + wrap.children.length);
+  if (pager.children.length !== 22) throw new Error('кнопок пагинатора: ' + pager.children.length);
+  const first = Number(wrap.children[0].href.match(/level=(\d+)/)[1]);
+  const second = Number(wrap.children[1].href.match(/level=(\d+)/)[1]);
+  if (first !== 1 || second !== 2) throw new Error('карточки: ' + first + ',' + second);
+  // Обратно на широкий экран: снова 4 карточки и 10 страниц
+  global.window.innerWidth = 1280;
+  eval(pageScript);
+  if (wrap.children.length !== 4) throw new Error('на широком карточек: ' + wrap.children.length);
+  if (pager.children.length !== 12) throw new Error('на широком кнопок: ' + pager.children.length);
+});
+
+check('пагинация не переносится на другую строку (nowrap + горизонтальный скролл)', () => {
+  const pagerCss = html.match(/#pager\s*\{[\s\S]*?\}/);
+  if (!pagerCss) throw new Error('блок #pager не найден в CSS');
+  if (!/flex-wrap:\s*nowrap/.test(pagerCss[0])) throw new Error('#pager: нет flex-wrap: nowrap');
+  if (!/overflow-x:\s*auto/.test(pagerCss[0])) throw new Error('#pager: нет overflow-x: auto');
+});
+
+check('порог «узкого» экрана согласован: CSS media == JS NARROW_MAX', () => {
+  const m = html.match(/@media\s*\(max-width:\s*(\d+)px\)/);
+  const j = pageScript.match(/NARROW_MAX\s*=\s*(\d+)/);
+  if (!m || !j) throw new Error('порог не найден (media=' + !!m + ', js=' + !!j + ')');
+  if (m[1] !== j[1]) throw new Error('media max-width ' + m[1] + 'px != NARROW_MAX ' + j[1]);
+  if (!/margin-top:\s*0/.test(html)) throw new Error('на узком экране отрицательный margin сетки не убран');
 });
 
 process.exit(failures ? 1 : 0);

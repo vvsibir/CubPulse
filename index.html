@@ -28,13 +28,15 @@
   header {
     flex: 0 0 auto;
     text-align: center;
-    padding-top: 60px;
-    margin-bottom: 10px;
+    /* на низких экранах шапка съедает меньше места (650x450 и т.п.) */
+    padding-top: clamp(8px, 4vh, 60px);
+    margin-bottom: clamp(2px, 1vh, 10px);
   }
   h1 {
-    font-size: 124px;
+    font-size: clamp(28px, 10vw, 124px);
     font-weight: 800;
     letter-spacing: 2px;
+    line-height: 0.9;
     color: #fff;
     text-shadow:
       0 0 6px  rgba(0, 220, 255, 0.95),
@@ -69,17 +71,18 @@
   }
   #levels {
     display: grid;
-    grid-template-columns: repeat(4, 260px);
-    gap: 24px;
+    grid-template-columns: repeat(4, clamp(140px, 26vw, 260px));
+    gap: clamp(8px, 2vw, 24px);
     justify-content: center;
     align-content: center;
     transform-origin: center;
-    margin-top: -110px;
+    /* приподнят к центру под крупной шапкой; resize() учитывает при расчёте scale */
+    margin-top: clamp(-80px, -4vh, -20px);
   }
   .card {
-    width: 260px;
-    padding: 22px 22px 18px;
-    border-radius: 16px;
+    width: clamp(140px, 26vw, 260px);
+    padding: clamp(10px, 2.4vw, 22px) clamp(10px, 2.4vw, 22px) clamp(8px, 2vw, 18px);
+    border-radius: clamp(10px, 2vw, 16px);
     border: 2px solid rgba(255, 255, 255, 0.22);
     color: #fff;
     text-decoration: none;
@@ -92,58 +95,69 @@
     box-shadow: 0 12px 34px rgba(0, 200, 255, 0.3);
   }
   .card .num {
-    font-size: 46px;
+    font-size: clamp(24px, 6vw, 46px);
     font-weight: bold;
     line-height: 1;
     opacity: 0.92;
   }
   .card .name {
-    font-size: 22px;
+    font-size: clamp(13px, 3vw, 22px);
     font-weight: bold;
-    margin-top: 6px;
+    margin-top: clamp(3px, 0.8vw, 6px);
+    line-height: 1.12;
   }
   .card .meta {
-    font-size: 14px;
+    font-size: clamp(10px, 2vw, 14px);
     opacity: 0.85;
-    margin-top: 6px;
+    margin-top: clamp(2px, 0.7vw, 6px);
+    line-height: 1.18;
   }
   .card .play {
-    margin-top: 16px;
-    padding: 8px 0;
+    margin-top: clamp(8px, 2vw, 16px);
+    padding: clamp(4px, 1.4vw, 8px) 0;
     text-align: center;
-    border-radius: 10px;
+    border-radius: clamp(6px, 1.8vw, 10px);
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.35);
     font-weight: bold;
-    font-size: 15px;
+    font-size: clamp(11px, 2.4vw, 15px);
   }
   #status {
     text-align: center;
-    margin-top: 30px;
+    margin-top: clamp(6px, 2vw, 30px);
     color: rgba(255, 255, 255, 0.65);
-    font-size: 16px;
+    font-size: clamp(10px, 2.4vw, 16px);
   }
   /* Пагинация: страницы карточек (вместо системной прокрутки — требование 1.10.2).
-     Прижата к низу страницы: footer-зона flex-колонки, не уезжает за край. */
+      Прижата к низу страницы: footer-зона flex-колонки, не уезжает за край.
+      Кнопки НЕ переносятся: одна строка + горизонтальный скролл при нехватке ширины.
+      margin: 0 auto (в flex-колонке по косой оси) — сжимает блок под контент и центрирует. */
   #pager {
     flex: 0 0 auto;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px 22px;
+    gap: clamp(4px, 1vw, 10px);
+    padding: clamp(6px, 1.6vw, 10px) clamp(4px, 1.6vw, 16px) clamp(10px, 2.4vw, 22px);
+    margin: 0 auto;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
   }
+  #pager::-webkit-scrollbar { height: 4px; }
   .page-btn {
-    min-width: 46px;
-    padding: 10px 6px;
+    flex: 0 0 auto;
+    min-width: clamp(30px, 9vw, 46px);
+    padding: clamp(6px, 2vw, 10px) clamp(5px, 1.6vw, 8px);
     font-family: inherit;
-    font-size: 18px;
+    font-size: clamp(11px, 3vw, 18px);
     font-weight: bold;
     color: #fff;
     background: rgba(0, 0, 0, 0.4);
     border: 2px solid rgba(255, 255, 255, 0.22);
-    border-radius: 10px;
+    border-radius: clamp(6px, 2vw, 10px);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   }
@@ -158,6 +172,24 @@
     box-shadow: 0 0 14px rgba(0, 200, 255, 0.4);
   }
   .page-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* Узкие экраны (портретные телефоны): 2 карточки в ряд, отрицательный margin убран —
+     он и был причиной наезда сетки на шапку/пагинацию на маленьких вьюпортах. */
+  @media (max-width: 559px) {
+    #levels {
+      grid-template-columns: repeat(2, clamp(120px, 46vw, 200px));
+      gap: clamp(8px, 3vw, 16px);
+      margin-top: 0;
+    }
+    .card {
+      width: clamp(120px, 46vw, 200px);
+      padding: clamp(8px, 3vw, 16px) clamp(8px, 3vw, 16px) clamp(6px, 2.4vw, 12px);
+    }
+    .card .num { font-size: clamp(24px, 9vw, 38px); }
+    .card .name { font-size: clamp(13px, 5vw, 18px); }
+    .card .meta { font-size: clamp(10px, 3.6vw, 13px); }
+    .card .play { font-size: clamp(11px, 4vw, 14px); }
+  }
 </style>
 </head>
 <body>
@@ -219,7 +251,7 @@
    window.GM_LEVELS (level-1.js..level-40.js подключены явными
    тегами выше). Авто-пробы level-41 и дальше нет — в консоли
    не будет 404-ошибок для несуществующих файлов.
-   Пагинация: по PER_PAGE карточек на страницу (страницы в #pager).
+   Пагинация: по getPerPage() карточек на страницу (страницы в #pager).
    ========================================================= */
 (function () {
   'use strict';
@@ -230,10 +262,13 @@
   // Скорость игрока (CONFIG.SPEED) — только для показа «секунд прохождения»
   const SPEED = 480;
 
-  // Карточек на страницу (4 в ряд × 1 ряд; 40 уровней → 10 страниц).
+  // Карточек на страницу: 4 (4 в ряд × 1 ряд) или 2 на узких экранах
+  // (2 в ряд × 1 ряд; 40 уровней → 10 или 20 страниц).
   // Сетка масштабируется под экран (resize), пагинация прижата к низу.
   // Собственная пагинация вместо системной прокрутки (требование 1.10.2)
-  const PER_PAGE = 4;
+  // Порог согласован с @media (max-width: 559px) в CSS.
+  const NARROW_MAX = 559;
+  function getPerPage() { return window.innerWidth <= NARROW_MAX ? 2 : 4; }
 
   // Режим из URL (?mode=...): пробрасывается в ссылки уровней, чтобы не сбрасываться
   const MODE = new URLSearchParams(window.location.search).get('mode') || '';
@@ -257,7 +292,7 @@
     for (let id = 1; id <= 40; id++) if (root.GM_LEVELS[id]) ids.push(id);
     return ids;
   }
-  function pageCount(n) { return Math.max(1, Math.ceil(n / PER_PAGE)); }
+  function pageCount(n) { return Math.max(1, Math.ceil(n / getPerPage())); }
 
   function buildCard(id, L) {
     const hue1 = (L.bg && L.bg.start !== undefined) ? L.bg.start : 220;
@@ -311,20 +346,24 @@
     const total = pageCount(ids.length);
     if (page >= total) page = total - 1;
 
+    const per = getPerPage();
     wrap.textContent = '';
-    const from = page * PER_PAGE;
-    const to = Math.min(from + PER_PAGE, ids.length);
+    const from = page * per;
+    const to = Math.min(from + per, ids.length);
     for (let i = from; i < to; i++) {
       wrap.appendChild(buildCard(ids[i], root.GM_LEVELS[ids[i]]));
     }
 
     renderPager(pager, page, total);
+    resize(); // размеры карточек изменились (смена языка/страницы) — пересчитать scale
   }
 
-  window.GM_SELECT_RENDER = render; // пересборка карточек после смены языка (SDK)
-
-  // Масштабирование сетки под экран: карточки не уползают за край, пагинация всегда внизу.
-  // Трансформ не влияет на раскладку (flex-центр #stage), поэтому ничего не перекрывается.
+  // Масштабирование сетки под свободную зону #stage: карточки не уползают
+  // в шапку и пагинацию. Трансформ не влияет на раскладку, поэтому берём
+  // реальный бокс #stage (flex-остаток между шапкой и пагинатором), а не
+  // высоту окна. Отрицательный margin-top сетки (подъём к центру) учитывается:
+  // сетка центрируется по margin-box, поэтому её визуальный габарит по высоте
+  // = H - marginTop (marginTop < 0 → больше H).
   function resize() {
     const stage = document.getElementById('stage');
     const lv = document.getElementById('levels');
@@ -332,14 +371,29 @@
     const W = lv.offsetWidth;
     const H = lv.offsetHeight;
     if (!W || !H) return;
-    const sw = window.innerWidth - 32;
-    const sh = window.innerHeight - 32;
-    const scale = Math.min(1, sw / W, sh / H);
+    const sw = stage.clientWidth - 16;  // небольшой запас по ширине
+    const sh = stage.clientHeight;
+    if (!(sw > 0) || !(sh > 0)) return; // бокс ещё не измерен (мок/до раскладки)
+    const mt = parseFloat(window.getComputedStyle(lv).marginTop) || 0;
+    const needH = Math.max(1, H - mt);
+    const scale = Math.min(1, sw / W, sh / needH);
     stage.style.transform = scale === 1 ? '' : 'scale(' + scale + ')';
   }
+
+  // При переходе через порог ширины меняется число карточек на страницу —
+  // сетку и пагинацию надо пересобрать, а не только масштабировать.
+  let lastPerPage = getPerPage();
+  function onViewportChange() {
+    const per = getPerPage();
+    if (per !== lastPerPage) { lastPerPage = per; render(); }
+    resize();
+  }
+
+  window.GM_SELECT_RENDER = render; // пересборка карточек после смены языка (SDK)
+
   if (window.addEventListener) {
-    window.addEventListener('resize', resize);
-    window.addEventListener('orientationchange', resize);
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('orientationchange', onViewportChange);
   }
 
   render();
